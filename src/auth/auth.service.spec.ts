@@ -713,4 +713,40 @@ describe('AuthService', () => {
       expect(spyMailVerifyEmailSuccess).toBeCalledWith(user.email, user.name);
     });
   });
+
+  describe('signout', () => {
+    it('should throw error when get not found user by accessToken', async () => {
+      jest
+        .spyOn(userService, 'findOneAndUpdate')
+        .mockResolvedValueOnce(undefined);
+
+      try {
+        await service.signout('9');
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error.response).toEqual({
+          status: HttpStatus.FORBIDDEN,
+          errors: {
+            accessToken: 'invalid accessToken',
+          },
+        });
+      }
+    });
+
+    it('should delete refreshToken in user field if accessToken valid', async () => {
+      const user = createUserDoc();
+
+      const spyUserServiceFindOneAndUpdate = jest
+        .spyOn(userService, 'findOneAndUpdate')
+        .mockResolvedValueOnce(createUserDoc({ refreshToken: null }) as User);
+
+      const response = await service.signout(user._id);
+
+      expect(response).toEqual({ data: null, message: 'signout success' });
+      expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
+        { _id: user._id, refreshToken: { $exists: true, $ne: null } },
+        { refreshToken: null },
+      );
+    });
+  });
 });

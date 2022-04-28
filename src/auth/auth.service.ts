@@ -251,4 +251,19 @@ export class AuthService {
     await this.mailService.verifyEmailSuccess(user.email, user.name);
     return APIResponse.Success(null, 'verify email success');
   }
+
+  public async signout(userId: string): Promise<IAPIResponse<null>> {
+    const user = await this.usersService.findOneAndUpdate(
+      { _id: userId, refreshToken: { $exists: true, $ne: null } },
+      { refreshToken: null },
+    );
+
+    if (!user) {
+      throw APIResponse.Error(HttpStatus.FORBIDDEN, {
+        accessToken: 'invalid accessToken',
+      });
+    }
+
+    return APIResponse.Success(null, 'signout success');
+  }
 }

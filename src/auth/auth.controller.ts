@@ -154,4 +154,19 @@ export class AuthController {
   confirmVerifyEmail(@Query('verifyKey') verifyKey: string) {
     return this.authService.confirmVerifyEmail(verifyKey);
   }
+
+  @Post('signout')
+  @ApiOkResponse({
+    type: ResponseSuccess,
+    description: 'Signout success, return message',
+  })
+  @ApiConflictResponse({
+    type: ResponseError,
+    description: 'Signout failed, return errors',
+  })
+  @UseGuards(JwtAccessGuard)
+  @HttpCode(HttpStatus.OK)
+  signout(@Req() req: RequestWithParsedPayload) {
+    return this.authService.signout(req.user.userId);
+  }
 }
