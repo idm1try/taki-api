@@ -132,4 +132,15 @@ export class AuthService {
 
     return APIResponse.Success(tokens, 'refresh new tokens success');
   }
+
+  public async accountInfo(userId: string): Promise<IAPIResponse<any>> {
+    const user = await this.usersService.getUserInfo(userId);
+
+    if (!user) {
+      throw APIResponse.Error(HttpStatus.FORBIDDEN, {
+        accessToken: 'invalid accessToken',
+      });
+    }
+    return APIResponse.Success(user, 'get account info success');
+  }
 }

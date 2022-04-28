@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
@@ -14,6 +15,7 @@ import { SignupDto } from './dtos/signup.dto';
 import { SigninEmailDto } from './dtos/signin-email.dto';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { RequestWithParsedPayload } from './auth.interfaces';
+import { JwtAccessGuard } from './guards/jwt-access.guard';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -61,5 +63,20 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   refreshTokens(@Req() { user }: RequestWithParsedPayload) {
     return this.authService.refreshTokens(user.userId, user.refreshToken);
+  }
+
+  @Get('account')
+  @ApiOkResponse({
+    type: ResponseSuccess,
+    description: 'Get user info success, return user info',
+  })
+  @ApiConflictResponse({
+    type: ResponseError,
+    description: 'Get user info failed, return errors',
+  })
+  @UseGuards(JwtAccessGuard)
+  @HttpCode(HttpStatus.OK)
+  accountInfo(@Req() req: RequestWithParsedPayload) {
+    return this.authService.accountInfo(req.user.userId);
   }
 }

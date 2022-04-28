@@ -9,6 +9,7 @@ import { KeysService } from '../keys/keys.service';
 import { MailService } from '../mail/mail.service';
 import { createMockFromClass } from '../../test/utils/createMockFromClass';
 import { Hashing } from '../utils';
+import { UserProfileSerialization } from 'src/users/serializations/user-profile.serialization';
 
 const createUserDoc = (override: Partial<User> = {}): Partial<User> => ({
   _id: '1',
@@ -401,6 +402,52 @@ describe('AuthService', () => {
           refreshToken: 'new-rt',
         },
       );
+    });
+  });
+
+  describe('accountInfo', () => {
+    it('should throw error when userId not found', async () => {
+      jest.spyOn(userService, 'getUserInfo').mockReturnValueOnce(undefined);
+
+      try {
+        await service.accountInfo('not-exist-id');
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error.response).toEqual({
+          status: HttpStatus.FORBIDDEN,
+          errors: {
+            accessToken: 'invalid accessToken',
+          },
+        });
+      }
+    });
+
+    it('should return account info without password and refreshTokens fields', async () => {
+      const user = createUserDoc({
+        name: 'Test Name',
+        email: 'test@gmail.com',
+        password: 'secret',
+        refreshToken: 'rt',
+      });
+
+      const spyUserServiceGetUserInfo = jest
+        .spyOn(userService, 'getUserInfo')
+        .mockResolvedValueOnce({
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+        } as UserProfileSerialization);
+
+      const result = await service.accountInfo(user._id);
+      expect(result).toEqual({
+        data: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+        },
+        message: 'get account info success',
+      });
+      expect(spyUserServiceGetUserInfo).toBeCalledWith(user._id);
     });
   });
 });
