@@ -95,4 +95,36 @@ describe('UsersService', () => {
       expect(spyModelFindOne).toBeCalledWith({ email: user.email });
     });
   });
+
+  describe('find', () => {
+    it('should return an empty array if not found', async () => {
+      jest.spyOn(model, 'findOne').mockReturnValueOnce(
+        createMock<Query<User[], User[]>>({
+          exec: jest.fn().mockResolvedValueOnce([]),
+        }),
+      );
+
+      const result = await service.findOne({ email: 'test@gmail.com' });
+      expect(result).toEqual([]);
+    });
+
+    it('should return an array of users when matched filters', async () => {
+      const users = [createUserDoc({ email: 'test1@gmail.com' })];
+
+      const spyModelFind = jest.spyOn(model, 'find').mockReturnValueOnce(
+        createMock<Query<User[], User[]>>({
+          exec: jest.fn().mockResolvedValue(users),
+        }),
+      );
+
+      const foundUsers = await service.find({
+        email: users[0].email,
+      });
+
+      expect(foundUsers).toEqual(users);
+      expect(spyModelFind).toBeCalledWith({
+        email: users[0].email,
+      });
+    });
+  });
 });

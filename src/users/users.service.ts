@@ -13,4 +13,8 @@ export class UsersService {
   public async findOne(filter: FilterQuery<User>): Promise<User> {
     return this.userModel.findOne(filter).exec();
   }
+
+  public async find(filter: FilterQuery<User>): Promise<User[]> {
+    return this.userModel.find(filter).exec();
+  }
 }
