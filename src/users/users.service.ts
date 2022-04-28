@@ -6,7 +6,9 @@ import {
   FilterQuery,
   UpdateQuery,
 } from 'mongoose';
+import { plainToInstance } from 'class-transformer';
 import { User } from './users.schema';
+import { UserProfileSerialization } from './serializations/user-profile.serialization';
 
 @Injectable()
 export class UsersService {
@@ -16,17 +18,22 @@ export class UsersService {
   }
 
   public async findOne(filter: FilterQuery<User>): Promise<User> {
-    return this.userModel.findOne(filter).exec();
+    return this.userModel.findOne(filter).lean();
   }
 
   public async find(filter: FilterQuery<User>): Promise<User[]> {
-    return this.userModel.find(filter).exec();
+    return this.userModel.find(filter).lean();
   }
 
   public async findOneAndUpdate(
     filter: FilterQuery<User>,
     newUpdates: UpdateQuery<User>,
   ): Promise<User | undefined> {
-    return this.userModel.findOneAndUpdate(filter, newUpdates).exec();
+    return this.userModel.findOneAndUpdate(filter, newUpdates).lean();
+  }
+
+  public async getUserInfo(userId: string) {
+    const user = await this.findOne({ _id: userId });
+    return plainToInstance(UserProfileSerialization, user);
   }
 }

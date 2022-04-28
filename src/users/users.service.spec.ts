@@ -72,7 +72,7 @@ describe('UsersService', () => {
     it('should return undefined if not found', async () => {
       jest.spyOn(model, 'findOne').mockReturnValueOnce(
         createMock<Query<User, User>>({
-          exec: jest.fn().mockResolvedValueOnce(undefined),
+          lean: jest.fn().mockResolvedValueOnce(undefined),
         }),
       );
 
@@ -84,7 +84,7 @@ describe('UsersService', () => {
       const user = createUserDoc({ email: 'test@gmail.com' });
       const spyModelFindOne = jest.spyOn(model, 'findOne').mockReturnValueOnce(
         createMock<Query<User, User>>({
-          exec: jest.fn().mockResolvedValueOnce(user),
+          lean: jest.fn().mockResolvedValueOnce(user),
         }),
       );
 
@@ -100,7 +100,7 @@ describe('UsersService', () => {
     it('should return an empty array if not found', async () => {
       jest.spyOn(model, 'findOne').mockReturnValueOnce(
         createMock<Query<User[], User[]>>({
-          exec: jest.fn().mockResolvedValueOnce([]),
+          lean: jest.fn().mockResolvedValueOnce([]),
         }),
       );
 
@@ -113,7 +113,7 @@ describe('UsersService', () => {
 
       const spyModelFind = jest.spyOn(model, 'find').mockReturnValueOnce(
         createMock<Query<User[], User[]>>({
-          exec: jest.fn().mockResolvedValue(users),
+          lean: jest.fn().mockResolvedValue(users),
         }),
       );
 
@@ -132,7 +132,7 @@ describe('UsersService', () => {
     it('should return undefined if not found user', async () => {
       jest.spyOn(model, 'findOneAndUpdate').mockReturnValueOnce(
         createMock<Query<User, User>>({
-          exec: jest.fn().mockResolvedValueOnce(undefined),
+          lean: jest.fn().mockResolvedValueOnce(undefined),
         }),
       );
 
@@ -148,7 +148,7 @@ describe('UsersService', () => {
         .spyOn(model, 'findOneAndUpdate')
         .mockReturnValueOnce(
           createMock<Query<User, User>>({
-            exec: jest
+            lean: jest
               .fn()
               .mockResolvedValueOnce(createUserDoc({ name: 'Updated Name' })),
           }),
@@ -163,6 +163,35 @@ describe('UsersService', () => {
         { _id: '1' },
         { name: 'Updated Name' },
       );
+    });
+  });
+
+  describe('getUserInfo', () => {
+    it('should return undefined if not found user by id', async () => {
+      jest.spyOn(service, 'findOne').mockResolvedValueOnce(undefined);
+
+      const foundUser = await service.getUserInfo('2');
+      expect(foundUser).toBeUndefined();
+    });
+
+    it('should return user info after serialization', async () => {
+      const user = createUserDoc({
+        name: 'Test Name',
+        email: 'test@gmail.com',
+        password: 'hashed-secret',
+        refreshToken: 'hashed-rt',
+      });
+      const spyFindOne = jest
+        .spyOn(service, 'findOne')
+        .mockResolvedValueOnce(user as User);
+
+      const userInfo = await service.getUserInfo(user._id);
+      expect(userInfo._id).toEqual(user._id);
+      expect(userInfo.name).toEqual(user.name);
+      expect(userInfo.email).toEqual(user.email);
+      expect(userInfo.password).toBeUndefined();
+      expect(userInfo.refreshToken).toBeUndefined();
+      expect(spyFindOne).toBeCalledWith({ _id: user._id });
     });
   });
 });
