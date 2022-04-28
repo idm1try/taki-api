@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:5.0.6-focal
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: $MONGO_USERNAME
+      MONGO_INITDB_ROOT_PASSWORD: $MONGO_PASSWORD
+      MONGO_INITDB_DATABASE: $MONGO_NAME
+    ports:
+      - '$MONGO_PORT:$MONGO_PORT'
+    networks:
+      - app-mongo
+    restart: always
+
+networks:
+  app-mongo:
+    driver: bridge
