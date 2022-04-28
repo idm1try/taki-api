@@ -132,7 +132,7 @@ describe('UsersService', () => {
     it('should return undefined if not found user', async () => {
       jest.spyOn(model, 'findOneAndUpdate').mockReturnValueOnce(
         createMock<Query<User, User>>({
-          lean: jest.fn().mockResolvedValueOnce(undefined),
+          exec: jest.fn().mockResolvedValueOnce(undefined),
         }),
       );
 
@@ -148,7 +148,7 @@ describe('UsersService', () => {
         .spyOn(model, 'findOneAndUpdate')
         .mockReturnValueOnce(
           createMock<Query<User, User>>({
-            lean: jest
+            exec: jest
               .fn()
               .mockResolvedValueOnce(createUserDoc({ name: 'Updated Name' })),
           }),
@@ -192,6 +192,33 @@ describe('UsersService', () => {
       expect(userInfo.password).toBeUndefined();
       expect(userInfo.refreshToken).toBeUndefined();
       expect(spyFindOne).toBeCalledWith({ _id: user._id });
+    });
+  });
+
+  describe('delete', () => {
+    it('should return undefined when userId not exist', async () => {
+      jest.spyOn(model, 'findOneAndDelete').mockReturnValueOnce(
+        createMock<Query<User, User>>({
+          exec: jest.fn().mockResolvedValueOnce(undefined),
+        }),
+      );
+
+      const result = await service.delete('not-exist-id');
+      expect(result).toBeUndefined();
+    });
+
+    it('should delete user when userId found', async () => {
+      const user = createUserDoc({ _id: '1' });
+      const spyModelFindOneAndDelete = jest
+        .spyOn(model, 'findOneAndDelete')
+        .mockReturnValueOnce(
+          createMock<Query<User, User>>({
+            exec: jest.fn().mockResolvedValueOnce(user),
+          }),
+        );
+
+      await service.delete(user._id);
+      expect(spyModelFindOneAndDelete).toBeCalledWith({ _id: user._id });
     });
   });
 });

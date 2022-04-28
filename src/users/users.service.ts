@@ -29,11 +29,15 @@ export class UsersService {
     filter: FilterQuery<User>,
     newUpdates: UpdateQuery<User>,
   ): Promise<User | undefined> {
-    return this.userModel.findOneAndUpdate(filter, newUpdates).lean();
+    return this.userModel.findOneAndUpdate(filter, newUpdates).exec();
   }
 
   public async getUserInfo(userId: string) {
     const user = await this.findOne({ _id: userId });
     return plainToInstance(UserProfileSerialization, user);
+  }
+
+  public async delete(userId: string): Promise<User | undefined> {
+    return this.userModel.findOneAndDelete({ _id: userId }).exec();
   }
 }
