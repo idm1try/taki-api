@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Model } from 'mongoose';
+import { Model, Query } from 'mongoose';
 import { getModelToken } from '@nestjs/mongoose';
+import { createMock } from '@golevelup/ts-jest';
 import { User } from './users.schema';
 import { UsersService } from './users.service';
 
@@ -64,6 +65,34 @@ describe('UsersService', () => {
         password: user.password,
         email: user.email,
       });
+    });
+  });
+
+  describe('findOne', () => {
+    it('should return undefined if not found', async () => {
+      jest.spyOn(model, 'findOne').mockReturnValueOnce(
+        createMock<Query<User, User>>({
+          exec: jest.fn().mockResolvedValueOnce(undefined),
+        }),
+      );
+
+      const result = await service.findOne({ email: 'test@gmail.com' });
+      expect(result).toBeUndefined();
+    });
+
+    it('should return a user when matched filters', async () => {
+      const user = createUserDoc({ email: 'test@gmail.com' });
+      const spyModelFindOne = jest.spyOn(model, 'findOne').mockReturnValueOnce(
+        createMock<Query<User, User>>({
+          exec: jest.fn().mockResolvedValueOnce(user),
+        }),
+      );
+
+      const foundUser = await service.findOne({
+        email: user.email,
+      });
+      expect(foundUser).toEqual(user);
+      expect(spyModelFindOne).toBeCalledWith({ email: user.email });
     });
   });
 });
