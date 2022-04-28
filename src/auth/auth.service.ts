@@ -96,4 +96,40 @@ export class AuthService {
 
     return APIResponse.Success(tokens, 'signin success');
   }
+
+  public async refreshTokens(
+    userId: string,
+    refreshToken: string,
+  ): IAPIResponse<Tokens> {
+    const user = await this.usersService.findOne({ _id: userId });
+    if (!user || !user.refreshToken) {
+      throw APIResponse.Error(HttpStatus.UNAUTHORIZED, {
+        accessToken: 'access denied',
+      });
+    }
+
+    const isRefreshTokenMatch = await Hashing.verify(
+      user.refreshToken,
+      refreshToken,
+    );
+
+    if (!isRefreshTokenMatch) {
+      throw APIResponse.Error(HttpStatus.UNAUTHORIZED, {
+        accessToken: 'invalid refreshToken',
+      });
+    }
+
+    const tokens = await this.generateTokens({
+      userId: user._id,
+    });
+
+    await this.usersService.findOneAndUpdate(
+      { _id: user._id },
+      {
+        refreshToken: tokens.refreshToken,
+      },
+    );
+
+    return APIResponse.Success(tokens, 'refresh new tokens success');
+  }
 }

@@ -305,4 +305,102 @@ describe('AuthService', () => {
       );
     });
   });
+
+  describe('refreshTokens', () => {
+    it('should throw error if user or refreshToken does exist', async () => {
+      jest
+        .spyOn(userService, 'findOne')
+        .mockResolvedValueOnce(createUserDoc() as User);
+
+      try {
+        await service.refreshTokens('1', 'invalid-refresh-token');
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error.response).toEqual({
+          status: HttpStatus.UNAUTHORIZED,
+          errors: {
+            accessToken: 'access denied',
+          },
+        });
+      }
+    });
+
+    it('should throw error if refreshToken not match', async () => {
+      jest.spyOn(userService, 'findOne').mockResolvedValueOnce(
+        createUserDoc({
+          refreshToken: await Hashing.hash('rt'),
+        }) as User,
+      );
+      try {
+        await service.refreshTokens('1', 'invalid-refresh-token');
+      } catch (error) {
+        expect(error.response).toEqual({
+          status: HttpStatus.UNAUTHORIZED,
+          errors: {
+            accessToken: 'invalid refreshToken',
+          },
+        });
+      }
+    });
+
+    it('should return tokens if refreshToken valid', async () => {
+      const user = createUserDoc({ _id: '1', email: 'test@gmail.com' });
+
+      const spyUserServiceFindOne = jest
+        .spyOn(userService, 'findOne')
+        .mockResolvedValueOnce(
+          createUserDoc({
+            refreshToken: await Hashing.hash('rt'),
+          }) as User,
+        );
+
+      const spyJwtSign = jest
+        .spyOn(jwtService, 'sign')
+        .mockResolvedValueOnce('new-at' as never)
+        .mockResolvedValueOnce('new-rt' as never);
+
+      const spyUserServiceFindOneAndUpdate = jest
+        .spyOn(userService, 'findOneAndUpdate')
+        .mockResolvedValueOnce(
+          createUserDoc({ refreshToken: 'hashed-new-rt' }) as User,
+        );
+
+      const response = await service.refreshTokens(user._id, 'rt');
+
+      expect(response).toEqual({
+        data: {
+          accessToken: 'new-at',
+          refreshToken: 'new-rt',
+        },
+        message: 'refresh new tokens success',
+      });
+      expect(spyUserServiceFindOne).toBeCalledWith({ _id: user._id });
+      expect(spyJwtSign).toHaveBeenNthCalledWith(
+        1,
+        {
+          userId: user._id,
+        },
+        {
+          secret: configService.get('auth.jwt.accessSecret'),
+          expiresIn: 60 * 15,
+        },
+      );
+      expect(spyJwtSign).toHaveBeenNthCalledWith(
+        2,
+        {
+          userId: user._id,
+        },
+        {
+          secret: configService.get('auth.jwt.refreshSecret'),
+          expiresIn: 60 * 60 * 24 * 7,
+        },
+      );
+      expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
+        { _id: user._id },
+        {
+          refreshToken: 'new-rt',
+        },
+      );
+    });
+  });
 });
