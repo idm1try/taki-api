@@ -6,6 +6,8 @@ import { Payload, Tokens } from './auth.interfaces';
 import { APIResponse, IAPIResponse } from '../helpers/response.helper';
 import { SignupDto } from './dtos/signup.dto';
 import { MailService } from '../mail/mail.service';
+import { SigninEmailDto } from './dtos/signin-email.dto';
+import { Hashing } from '../utils';
 
 @Injectable()
 export class AuthService {
@@ -57,5 +59,41 @@ export class AuthService {
 
     await this.mailService.signupSuccess(user.email, user.name);
     return APIResponse.Success(tokens, 'signup success');
+  }
+
+  public async signin(signinEmailDto: SigninEmailDto): IAPIResponse<Tokens> {
+    const user = await this.usersService.findOne({
+      email: signinEmailDto.email,
+    });
+
+    if (!user) {
+      throw APIResponse.Error(HttpStatus.BAD_REQUEST, {
+        email: 'email is not exist',
+      });
+    }
+
+    const isMatchedPassword = await Hashing.verify(
+      user.password,
+      signinEmailDto.password,
+    );
+
+    if (!isMatchedPassword) {
+      throw APIResponse.Error(HttpStatus.BAD_REQUEST, {
+        password: 'incorect password',
+      });
+    }
+
+    const tokens = await this.generateTokens({
+      userId: user?._id,
+    });
+
+    await this.usersService.findOneAndUpdate(
+      { _id: user._id },
+      {
+        refreshToken: tokens.refreshToken,
+      },
+    );
+
+    return APIResponse.Success(tokens, 'signin success');
   }
 }

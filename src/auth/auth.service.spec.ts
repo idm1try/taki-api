@@ -8,6 +8,7 @@ import { AuthService } from './auth.service';
 import { KeysService } from '../keys/keys.service';
 import { MailService } from '../mail/mail.service';
 import { createMockFromClass } from '../../test/utils/createMockFromClass';
+import { Hashing } from '../utils';
 
 const createUserDoc = (override: Partial<User> = {}): Partial<User> => ({
   _id: '1',
@@ -210,6 +211,98 @@ describe('AuthService', () => {
         },
       );
       expect(spyMailSignupSuccess).toBeCalledWith(user.email, user.name);
+    });
+  });
+
+  describe('signin', () => {
+    it('should throw error when email is not exist', async () => {
+      jest.spyOn(userService, 'findOne').mockResolvedValueOnce(undefined);
+
+      try {
+        await service.signin({
+          email: 'notexist@gmail.com',
+          password: 'wrong',
+        });
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+
+        expect(error.response).toEqual({
+          status: HttpStatus.BAD_REQUEST,
+          errors: {
+            email: 'email is not exist',
+          },
+        });
+      }
+    });
+
+    it('should throw error when password invalid', async () => {
+      const user = createUserDoc({
+        email: 'test@gmail.com',
+        password: 'secret',
+      });
+
+      jest.spyOn(userService, 'findOne').mockResolvedValueOnce({
+        ...user,
+        password: await Hashing.hash(user.password),
+      } as User);
+
+      try {
+        await service.signin({
+          email: user.email,
+          password: 'not-secret',
+        });
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error.response).toEqual({
+          status: HttpStatus.BAD_REQUEST,
+          errors: {
+            password: 'incorect password',
+          },
+        });
+      }
+    });
+
+    it('should return tokens when signin success', async () => {
+      const user = createUserDoc({
+        email: 'test@gmail.com',
+        password: 'secret',
+      });
+
+      const spyUserServiceFindOne = jest
+        .spyOn(userService, 'findOne')
+        .mockResolvedValueOnce({
+          ...user,
+          password: await Hashing.hash(user.password),
+        } as User);
+
+      jest
+        .spyOn(jwtService, 'sign')
+        .mockResolvedValueOnce('at' as never)
+        .mockResolvedValueOnce('rt' as never);
+
+      const spyUserServiceFindOneAndUpdate = jest
+        .spyOn(userService, 'findOneAndUpdate')
+        .mockResolvedValueOnce({ ...user, refreshToken: 'hashed-rt' } as User);
+
+      const response = await service.signin({
+        email: user.email,
+        password: user.password,
+      });
+
+      expect(response).toEqual({
+        data: {
+          accessToken: 'at',
+          refreshToken: 'rt',
+        },
+        message: 'signin success',
+      });
+      expect(spyUserServiceFindOne).toBeCalledWith({
+        email: user.email,
+      });
+      expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
+        { _id: '1' },
+        { refreshToken: 'rt' },
+      );
     });
   });
 });
