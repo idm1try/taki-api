@@ -62,4 +62,26 @@ describe('MailService', () => {
       },
     });
   });
+
+  it('updatePasswordSuccess should send email', async () => {
+    await service.updatePasswordSuccess(mockEmail, mockName);
+
+    expect(spyMailerSendMail).toBeCalledWith({
+      to: mockEmail,
+      text: 'Update Password Success',
+      subject: 'Update Password Success',
+      template: '/main',
+      context: {
+        title: 'Update Password Success',
+        logoUrl: configService.get('mail.logoUrl'),
+        appName: configService.get('app.name'),
+        text1: `Hello ${mockName || ''},`,
+        text2: 'Update your password success',
+        description: 'Click on the button bellow to redirect to log in page.',
+        hasAction: true,
+        url: configService.get('mail.callbackLoginUrl'),
+        buttonLabel: 'Login',
+      },
+    });
+  });
 });

@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Patch,
   Post,
   Req,
   UseGuards,
@@ -16,6 +17,7 @@ import { SigninEmailDto } from './dtos/signin-email.dto';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { RequestWithParsedPayload } from './auth.interfaces';
 import { JwtAccessGuard } from './guards/jwt-access.guard';
+import { UpdatePasswordDto } from './dtos/update-password.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -78,5 +80,27 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   accountInfo(@Req() req: RequestWithParsedPayload) {
     return this.authService.accountInfo(req.user.userId);
+  }
+
+  @Patch('password')
+  @ApiOkResponse({
+    type: ResponseSuccess,
+    description: 'Update password success, return message',
+  })
+  @ApiConflictResponse({
+    type: ResponseError,
+    description: 'Update password failed, return errors',
+  })
+  @UseGuards(JwtAccessGuard)
+  @HttpCode(HttpStatus.OK)
+  updatePassword(
+    @Req() req: RequestWithParsedPayload,
+    @Body() updatePasswordDto: UpdatePasswordDto,
+  ) {
+    return this.authService.updatePassword(
+      req.user.userId,
+      updatePasswordDto.password,
+      updatePasswordDto.newPassword,
+    );
   }
 }

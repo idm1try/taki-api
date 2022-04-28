@@ -450,4 +450,58 @@ describe('AuthService', () => {
       expect(spyUserServiceGetUserInfo).toBeCalledWith(user._id);
     });
   });
+
+  describe('updatePassword', () => {
+    it('should update new password and send email notification', async () => {
+      const user = createUserDoc({
+        name: 'Test User',
+        email: 'test@gmail.com',
+        password: 'secret',
+        refreshToken: 'hashed-rt',
+      });
+
+      const spyUserServiceFindOne = jest
+        .spyOn(userService, 'findOne')
+        .mockResolvedValueOnce({
+          ...user,
+          password: await Hashing.hash(user.password),
+        } as User);
+
+      const spyUserServiceFindOneAndUpdate = jest
+        .spyOn(userService, 'findOneAndUpdate')
+        .mockResolvedValueOnce({
+          ...user,
+          refreshToken: null,
+          password: 'hashed-new-secret',
+        } as User);
+
+      const spyMailUpdatePasswordSuccess = jest.spyOn(
+        mailService,
+        'updatePasswordSuccess',
+      );
+
+      const response = await service.updatePassword(
+        user._id,
+        user.password,
+        'new-secret',
+      );
+
+      expect(response).toEqual({
+        data: null,
+        message: 'update password success',
+      });
+      expect(spyUserServiceFindOne).toBeCalledWith({ _id: '1' });
+      expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
+        { _id: user._id },
+        {
+          password: 'new-secret',
+          refreshToken: null,
+        },
+      );
+      expect(spyMailUpdatePasswordSuccess).toBeCalledWith(
+        user.email,
+        user.name,
+      );
+    });
+  });
 });

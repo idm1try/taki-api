@@ -28,4 +28,27 @@ export class MailService {
       },
     });
   }
+
+  public async updatePasswordSuccess(
+    email: string,
+    name?: string,
+  ): Promise<void> {
+    return this.mailerService.sendMail({
+      to: email,
+      text: 'Update Password Success',
+      subject: 'Update Password Success',
+      template: '/main',
+      context: {
+        title: 'Update Password Success',
+        logoUrl: this.configService.get('mail.logoUrl'),
+        appName: this.configService.get('app.name'),
+        text1: `Hello ${name || ''},`,
+        text2: 'Update your password success',
+        description: 'Click on the button bellow to redirect to log in page.',
+        hasAction: true,
+        url: this.configService.get('mail.callbackLoginUrl'),
+        buttonLabel: 'Login',
+      },
+    });
+  }
 }

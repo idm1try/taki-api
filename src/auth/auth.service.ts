@@ -143,4 +143,30 @@ export class AuthService {
     }
     return APIResponse.Success(user, 'get account info success');
   }
+
+  public async updatePassword(
+    userId: string,
+    password: string,
+    newPassword: string,
+  ): IAPIResponse<null> {
+    const user = await this.usersService.findOne({ _id: userId });
+    const isMatchedPassword = await Hashing.verify(user.password, password);
+
+    if (!isMatchedPassword) {
+      throw APIResponse.Error(HttpStatus.NOT_ACCEPTABLE, {
+        currentPassword: 'current password is not match',
+      });
+    }
+
+    await this.usersService.findOneAndUpdate(
+      { _id: userId },
+      {
+        password: newPassword,
+        refreshToken: null,
+      },
+    );
+
+    await this.mailService.updatePasswordSuccess(user.email, user.name);
+    return APIResponse.Success(null, 'update password success');
+  }
 }
