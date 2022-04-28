@@ -8,6 +8,7 @@ import { SignupDto } from './dtos/signup.dto';
 import { MailService } from '../mail/mail.service';
 import { SigninEmailDto } from './dtos/signin-email.dto';
 import { Hashing } from '../utils';
+import { UserProfileSerialization } from '../users/serializations/user-profile.serialization';
 
 @Injectable()
 export class AuthService {
@@ -133,7 +134,9 @@ export class AuthService {
     return APIResponse.Success(tokens, 'refresh new tokens success');
   }
 
-  public async accountInfo(userId: string): Promise<IAPIResponse<any>> {
+  public async accountInfo(
+    userId: string,
+  ): Promise<IAPIResponse<UserProfileSerialization>> {
     const user = await this.usersService.getUserInfo(userId);
 
     if (!user) {
