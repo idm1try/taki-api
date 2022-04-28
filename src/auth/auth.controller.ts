@@ -22,6 +22,7 @@ import { RequestWithParsedPayload } from './auth.interfaces';
 import { JwtAccessGuard } from './guards/jwt-access.guard';
 import { UpdatePasswordDto } from './dtos/update-password.dto';
 import { DeleteAccountDto } from './dtos/delete-account.dto';
+import { UpdateAccountDto } from './dtos/update-account.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -168,5 +169,26 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   signout(@Req() req: RequestWithParsedPayload) {
     return this.authService.signout(req.user.userId);
+  }
+
+  @Put('account')
+  @ApiOkResponse({
+    type: ResponseSuccess,
+    description: 'update account info success, return user info',
+  })
+  @ApiConflictResponse({
+    type: ResponseError,
+    description: 'update account info failed, return errors',
+  })
+  @UseGuards(JwtAccessGuard)
+  @HttpCode(HttpStatus.OK)
+  updateAccountInfo(
+    @Req() req: RequestWithParsedPayload,
+    @Body() updateAccountInfoDto: UpdateAccountDto,
+  ) {
+    return this.authService.updateAccountInfo(
+      req.user.userId,
+      updateAccountInfoDto,
+    );
   }
 }

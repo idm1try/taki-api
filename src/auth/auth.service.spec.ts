@@ -940,4 +940,84 @@ describe('AuthService', () => {
       expect(spyMailResetPasswordSuccess).toBeCalledWith(user.email, user.name);
     });
   });
+
+  describe('updateAccountInfo', () => {
+    it('should throw error when update object is empty', async () => {
+      try {
+        await service.updateAccountInfo('1', {});
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error).toEqual({
+          status: HttpStatus.NOT_ACCEPTABLE,
+          errors: {
+            account: 'nothing new to update',
+          },
+        });
+      }
+    });
+
+    it('should throw error when new email same as old email', async () => {
+      const user = createUserDoc({ email: 'test@gmail.com' });
+
+      jest.spyOn(userService, 'findOne').mockResolvedValueOnce(user as User);
+
+      try {
+        await service.updateAccountInfo(user._id, { email: user.email });
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error.response).toEqual({
+          status: HttpStatus.NOT_ACCEPTABLE,
+          errors: {
+            email: `${user.email} same as your old email`,
+          },
+        });
+      }
+    });
+
+    it('should throw error when new email is being used by another account', async () => {
+      const user = createUserDoc({ _id: '2', email: 'test@gmail.com' });
+
+      jest.spyOn(userService, 'findOne').mockResolvedValueOnce(user as User);
+
+      try {
+        await service.updateAccountInfo('1', { email: user.email });
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error.response).toEqual({
+          status: HttpStatus.CONFLICT,
+          errors: {
+            email: `${user.email} is being used by another account`,
+          },
+        });
+      }
+    });
+
+    it('should response message update success', async () => {
+      const user = createUserDoc({ email: 'test@gmail.com' });
+
+      const spyUserServiceFindOne = jest
+        .spyOn(userService, 'findOne')
+        .mockResolvedValueOnce(undefined);
+
+      const spyUserServiceFindOneAndUpdate = jest
+        .spyOn(userService, 'findOneAndUpdate')
+        .mockResolvedValueOnce(user as User);
+
+      const response = await service.updateAccountInfo(user._id, {
+        name: 'New Test Name',
+        email: 'newtest@gmail.com',
+      });
+      expect(response).toEqual({
+        data: null,
+        message: 'update account info success',
+      });
+      expect(spyUserServiceFindOne).toBeCalledWith({
+        email: 'newtest@gmail.com',
+      });
+      expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
+        { _id: user._id },
+        { name: 'New Test Name', email: 'newtest@gmail.com' },
+      );
+    });
+  });
 });

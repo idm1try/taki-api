@@ -11,6 +11,7 @@ import { Hashing } from '../utils';
 import { UserProfileSerialization } from '../users/serializations/user-profile.serialization';
 import { DeleteAccountDto } from './dtos/delete-account.dto';
 import { KeysService } from '../keys/keys.service';
+import { UpdateAccountDto } from './dtos/update-account.dto';
 
 @Injectable()
 export class AuthService {
@@ -324,5 +325,40 @@ export class AuthService {
     await this.keysService.revoke(forgotPasswordKey);
     await this.mailService.resetPasswordSuccess(user.email, user.name);
     return APIResponse.Success(null, 'update new password success');
+  }
+
+  public async updateAccountInfo(
+    userId: string,
+    updateAccountInfoDto: UpdateAccountDto,
+  ): IAPIResponse<null> {
+    if (!Object.keys(updateAccountInfoDto)) {
+      throw APIResponse.Error(HttpStatus.NOT_ACCEPTABLE, {
+        account: 'nothing new to update',
+      });
+    }
+    if (updateAccountInfoDto.email) {
+      const user = await this.usersService.findOne({
+        email: updateAccountInfoDto.email,
+      });
+
+      if (user && user._id.toString() === userId) {
+        throw APIResponse.Error(HttpStatus.NOT_ACCEPTABLE, {
+          email: `${updateAccountInfoDto.email} same as your old email`,
+        });
+      }
+
+      if (user && user._id.toString() !== userId) {
+        throw APIResponse.Error(HttpStatus.CONFLICT, {
+          email: `${updateAccountInfoDto.email} is being used by another account`,
+        });
+      }
+    }
+
+    await this.usersService.findOneAndUpdate(
+      { _id: userId },
+      updateAccountInfoDto,
+    );
+
+    return APIResponse.Success(null, 'update account info success');
   }
 }
