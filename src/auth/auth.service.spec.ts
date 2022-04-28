@@ -504,4 +504,82 @@ describe('AuthService', () => {
       );
     });
   });
+
+  describe('deleteAccount', () => {
+    it('should throw error when user is not exist', async () => {
+      jest.spyOn(userService, 'findOne').mockResolvedValueOnce(undefined);
+
+      try {
+        await service.deleteAccount('not-exist-id', {
+          password: 'secret',
+        });
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error.response).toEqual({
+          status: HttpStatus.NOT_FOUND,
+          errors: {
+            user: 'user is not exist',
+          },
+        });
+      }
+    });
+
+    it('should throw error when password not match', async () => {
+      const user = createUserDoc({
+        email: 'test@gmail.com',
+        password: 'secret',
+      });
+
+      jest.spyOn(userService, 'findOne').mockResolvedValueOnce({
+        ...user,
+        password: await Hashing.hash(user.password),
+      } as User);
+
+      try {
+        await service.deleteAccount(user._id, {
+          password: 'not-secret',
+        });
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error.response).toEqual({
+          status: HttpStatus.FORBIDDEN,
+          errors: {
+            password: 'password does not match',
+          },
+        });
+      }
+    });
+
+    it('should delete account and send email notification', async () => {
+      const user = createUserDoc({
+        email: 'test@gmail.com',
+        password: 'secret',
+      });
+
+      const spyUserServiceFindOne = jest
+        .spyOn(userService, 'findOne')
+        .mockResolvedValueOnce({
+          ...user,
+          password: await Hashing.hash(user.password),
+        } as User);
+
+      const spyUserServiceDelete = jest
+        .spyOn(userService, 'delete')
+        .mockResolvedValueOnce(user as User);
+
+      const spyMailDeleteAccountSuccess = jest.spyOn(
+        mailService,
+        'deleteAccountSuccess',
+      );
+
+      const response = await service.deleteAccount(user._id, {
+        password: user.password,
+      });
+
+      expect(response).toEqual({ data: null, message: 'account deleted' });
+      expect(spyUserServiceFindOne).toBeCalledWith({ _id: user._id });
+      expect(spyUserServiceDelete).toBeCalledWith(user._id);
+      expect(spyMailDeleteAccountSuccess).toBeCalledWith(user.email, user.name);
+    });
+  });
 });

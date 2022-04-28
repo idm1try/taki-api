@@ -9,6 +9,7 @@ import { MailService } from '../mail/mail.service';
 import { SigninEmailDto } from './dtos/signin-email.dto';
 import { Hashing } from '../utils';
 import { UserProfileSerialization } from '../users/serializations/user-profile.serialization';
+import { DeleteAccountDto } from './dtos/delete-account.dto';
 
 @Injectable()
 export class AuthService {
@@ -171,5 +172,34 @@ export class AuthService {
 
     await this.mailService.updatePasswordSuccess(user.email, user.name);
     return APIResponse.Success(null, 'update password success');
+  }
+
+  public async deleteAccount(
+    userId: string,
+    deleteAccountDto: DeleteAccountDto,
+  ) {
+    const user = await this.usersService.findOne({ _id: userId });
+    if (!user) {
+      throw APIResponse.Error(HttpStatus.NOT_FOUND, {
+        user: 'user is not exist',
+      });
+    }
+
+    const isMatchedPassword = await Hashing.verify(
+      user.password,
+      deleteAccountDto.password,
+    );
+    if (!isMatchedPassword) {
+      throw APIResponse.Error(HttpStatus.FORBIDDEN, {
+        password: 'password does not match',
+      });
+    }
+
+    const deletedAccount = await this.usersService.delete(userId);
+    await this.mailService.deleteAccountSuccess(
+      deletedAccount.email,
+      deletedAccount.name,
+    );
+    return APIResponse.Success(null, 'account deleted');
   }
 }

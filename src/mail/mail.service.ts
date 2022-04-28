@@ -51,4 +51,27 @@ export class MailService {
       },
     });
   }
+
+  public async deleteAccountSuccess(
+    email: string,
+    name?: string,
+  ): Promise<void> {
+    return this.mailerService.sendMail({
+      to: email,
+      text: 'Deleted Account',
+      subject: 'Deleted Account',
+      template: '/main',
+      context: {
+        title: 'Deleted Account',
+        logoUrl: this.configService.get('mail.logoUrl'),
+        appName: this.configService.get('app.name'),
+        text1: `Goodbye ${name || ''}`,
+        text2: 'Your account was deleted!',
+        description: `Thank you for being a part of ${this.configService.get(
+          'app.name',
+        )}.`,
+        hasAction: false,
+      },
+    });
+  }
 }

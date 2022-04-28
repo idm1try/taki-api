@@ -84,4 +84,26 @@ describe('MailService', () => {
       },
     });
   });
+
+  it('deleteAccountSuccess should send email', async () => {
+    await service.deleteAccountSuccess(mockEmail, mockName);
+
+    expect(spyMailerSendMail).toBeCalledWith({
+      to: mockEmail,
+      text: 'Deleted Account',
+      subject: 'Deleted Account',
+      template: '/main',
+      context: {
+        title: 'Deleted Account',
+        logoUrl: configService.get('mail.logoUrl'),
+        appName: configService.get('app.name'),
+        text1: `Goodbye ${mockName || ''}`,
+        text2: 'Your account was deleted!',
+        description: `Thank you for being a part of ${configService.get(
+          'app.name',
+        )}.`,
+        hasAction: false,
+      },
+    });
+  });
 });

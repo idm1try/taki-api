@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -18,6 +19,7 @@ import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { RequestWithParsedPayload } from './auth.interfaces';
 import { JwtAccessGuard } from './guards/jwt-access.guard';
 import { UpdatePasswordDto } from './dtos/update-password.dto';
+import { DeleteAccountDto } from './dtos/delete-account.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -102,5 +104,23 @@ export class AuthController {
       updatePasswordDto.password,
       updatePasswordDto.newPassword,
     );
+  }
+
+  @Delete('account')
+  @UseGuards(JwtAccessGuard)
+  @ApiOkResponse({
+    type: ResponseSuccess,
+    description: 'Signin with google success, return new tokens',
+  })
+  @ApiConflictResponse({
+    type: ResponseError,
+    description: 'Signin with google failed, return errors',
+  })
+  @HttpCode(HttpStatus.OK)
+  deleteAccount(
+    @Req() { user }: RequestWithParsedPayload,
+    @Body() deleteAccountDto: DeleteAccountDto,
+  ) {
+    return this.authService.deleteAccount(user.userId, deleteAccountDto);
   }
 }
