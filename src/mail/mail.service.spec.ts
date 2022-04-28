@@ -152,4 +152,53 @@ describe('MailService', () => {
       },
     });
   });
+
+  it('forgotPassword should send email', async () => {
+    const mockResetPasswordKey = 'valid-key';
+
+    await service.forgotPassword(mockEmail, mockResetPasswordKey, mockName);
+
+    expect(spyMailerSendMail).toBeCalledWith({
+      to: mockEmail,
+      text: 'Reset Password',
+      subject: 'Reset Password',
+      template: '/main',
+      context: {
+        title: 'Reset Password',
+        logoUrl: configService.get('mail.logoUrl'),
+        appName: configService.get('app.name'),
+        text1: `Hello ${mockName || ''}`,
+        text2: 'Forgot you password?',
+        description:
+          "That's okay, it happens! Click on the button below to reset your password.",
+        hasAction: true,
+        url: `${configService.get(
+          'mail.callbackResetUrl',
+        )}?forgotPasswordKey=${mockResetPasswordKey}`,
+        buttonLabel: 'Reset Password',
+      },
+    });
+  });
+
+  it('resetPasswordSuccess should send email', async () => {
+    await service.resetPasswordSuccess(mockEmail, mockName);
+
+    expect(spyMailerSendMail).toBeCalledWith({
+      to: mockEmail,
+      text: 'Reset Password Success',
+      subject: 'Reset Password Success',
+      template: '/main',
+      context: {
+        title: 'Reset Password Success',
+        logoUrl: configService.get('mail.logoUrl'),
+        appName: configService.get('app.name'),
+        text1: `Hello ${mockName || ''}`,
+        text2: 'Reset your password success',
+        description: 'Click on the button below to redirect to login page.',
+        hasAction: true,
+        url: configService.get('mail.callbackLoginUrl'),
+        buttonLabel: 'Login',
+      },
+    });
+  });
 });

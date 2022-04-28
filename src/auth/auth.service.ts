@@ -266,4 +266,63 @@ export class AuthService {
 
     return APIResponse.Success(null, 'signout success');
   }
+
+  public async forgotPassword(email: string): IAPIResponse<null> {
+    const user = await this.usersService.findOne({ email });
+
+    if (!user) {
+      throw APIResponse.Error(HttpStatus.NOT_FOUND, {
+        email: `${email} is not exist`,
+      });
+    }
+
+    if (!user.isVerify) {
+      throw APIResponse.Error(HttpStatus.NOT_ACCEPTABLE, {
+        email: `${email} is not verified`,
+      });
+    }
+
+    try {
+      const forgotPassword = await this.keysService.create(user._id);
+
+      await this.mailService.forgotPassword(
+        user.email,
+        forgotPassword.key,
+        user.name,
+      );
+
+      return APIResponse.Success(null, 'reset password email is sent');
+    } catch (error) {
+      throw APIResponse.Error(HttpStatus.NOT_ACCEPTABLE, {
+        email: 'reset password email is already sent, try again later',
+      });
+    }
+  }
+
+  public async resetPassword(
+    forgotPasswordKey: string,
+    newPassword: string,
+  ): IAPIResponse<null> {
+    const forgotPassword = await this.keysService.verify(forgotPasswordKey);
+    if (!forgotPassword) {
+      throw APIResponse.Error(HttpStatus.NOT_ACCEPTABLE, {
+        forgotPasswordKey: 'forgotPasswordKey is expired or invalid',
+      });
+    }
+
+    const user = await this.usersService.findOneAndUpdate(
+      { _id: forgotPassword.user._id },
+      { password: newPassword, refreshToken: null },
+    );
+
+    if (!user) {
+      throw APIResponse.Error(HttpStatus.NOT_ACCEPTABLE, {
+        forgotPasswordKey: 'forgotPasswordKey is expired or invalid',
+      });
+    }
+
+    await this.keysService.revoke(forgotPasswordKey);
+    await this.mailService.resetPasswordSuccess(user.email, user.name);
+    return APIResponse.Success(null, 'update new password success');
+  }
 }

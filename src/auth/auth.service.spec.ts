@@ -749,4 +749,195 @@ describe('AuthService', () => {
       );
     });
   });
+
+  describe('forgotPassword', () => {
+    it('should throw error when email not exist', async () => {
+      jest.spyOn(userService, 'findOne').mockResolvedValueOnce(undefined);
+      const invalidEmail = 'not-exist@gmail.com';
+
+      try {
+        await service.forgotPassword(invalidEmail);
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error.response).toEqual({
+          status: HttpStatus.NOT_FOUND,
+          errors: {
+            email: `${invalidEmail} is not exist`,
+          },
+        });
+      }
+    });
+
+    it('should throw error if user is not verified', async () => {
+      const user = createUserDoc({ email: 'test@gmail.com', isVerify: false });
+
+      jest.spyOn(userService, 'findOne').mockResolvedValueOnce(user as User);
+
+      try {
+        await service.forgotPassword(user.email);
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error.response).toEqual({
+          status: HttpStatus.NOT_ACCEPTABLE,
+          errors: {
+            email: `${user.email} is not verified`,
+          },
+        });
+      }
+    });
+
+    it('should throw error when email server down', async () => {
+      const user = createUserDoc({ email: 'test@gmail.com', isVerify: true });
+      jest.spyOn(userService, 'findOne').mockResolvedValueOnce(user as User);
+
+      jest
+        .spyOn(mailService, 'forgotPassword')
+        .mockRejectedValueOnce(new Error('email server down'));
+
+      jest
+        .spyOn(keysService, 'create')
+        .mockResolvedValueOnce({ key: 'reset-key', user: user } as Key);
+
+      try {
+        await service.forgotPassword(user.email);
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error.response).toEqual({
+          status: HttpStatus.NOT_ACCEPTABLE,
+          errors: {
+            email: 'reset password email is already sent, try again later',
+          },
+        });
+      }
+    });
+
+    it('should throw error when duplicate request reset password', async () => {
+      const user = createUserDoc({ email: 'test@gmail.com', isVerify: true });
+      jest.spyOn(userService, 'findOne').mockResolvedValueOnce(user as User);
+
+      jest
+        .spyOn(keysService, 'create')
+        .mockRejectedValueOnce(new Error('duplicate'));
+
+      try {
+        await service.forgotPassword(user.email);
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error.response).toEqual({
+          status: HttpStatus.NOT_ACCEPTABLE,
+          errors: {
+            email: 'reset password email is already sent, try again later',
+          },
+        });
+      }
+    });
+
+    it('should send email reset password and response message', async () => {
+      const user = createUserDoc({ email: 'test@gmail.com', isVerify: true });
+      const spyUserServiceFindOne = jest
+        .spyOn(userService, 'findOne')
+        .mockResolvedValueOnce(user as User);
+
+      const spyMailForgotPassword = jest.spyOn(mailService, 'forgotPassword');
+
+      const spyForgotCreate = jest
+        .spyOn(keysService, 'create')
+        .mockResolvedValueOnce({ key: 'reset-key', user: user } as Key);
+
+      const response = await service.forgotPassword(user.email);
+
+      expect(response).toEqual({
+        data: null,
+        message: 'reset password email is sent',
+      });
+      expect(spyUserServiceFindOne).toBeCalledWith({ email: user.email });
+      expect(spyMailForgotPassword).toBeCalledWith(
+        user.email,
+        'reset-key',
+        user.name,
+      );
+      expect(spyForgotCreate).toBeCalledWith(user._id);
+    });
+  });
+
+  describe('resetPassword', () => {
+    it('should throw error when forgotPasswordKey is expired or invalid', async () => {
+      jest.spyOn(keysService, 'verify').mockResolvedValueOnce(undefined);
+
+      try {
+        await service.resetPassword('invalid-key', 'new-password');
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error.response).toEqual({
+          status: HttpStatus.NOT_ACCEPTABLE,
+          errors: {
+            forgotPasswordKey: 'forgotPasswordKey is expired or invalid',
+          },
+        });
+      }
+    });
+
+    it('should throw error when user info in forgotPasswordKey not exist', async () => {
+      const user = createUserDoc({ email: 'test@gmail.com', isVerify: true });
+      jest.spyOn(keysService, 'verify').mockResolvedValueOnce({
+        key: 'valid-key',
+        user,
+      } as Key);
+
+      jest
+        .spyOn(userService, 'findOneAndUpdate')
+        .mockResolvedValueOnce(undefined);
+
+      try {
+        await service.resetPassword('valid-key', 'new-password');
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error.response).toEqual({
+          status: HttpStatus.NOT_ACCEPTABLE,
+          errors: {
+            forgotPasswordKey: 'forgotPasswordKey is expired or invalid',
+          },
+        });
+      }
+    });
+
+    it('should clean refreshToken and update new password and send email notification', async () => {
+      const user = createUserDoc({ email: 'test@gmail.com', isVerify: true });
+      const spyForgotVerify = jest
+        .spyOn(keysService, 'verify')
+        .mockResolvedValueOnce({
+          key: 'valid-key',
+          user,
+        } as Key);
+
+      const spyUserServiceFindOneAndUpdate = jest
+        .spyOn(userService, 'findOneAndUpdate')
+        .mockResolvedValueOnce({
+          ...user,
+          password: 'hashed-new-secret',
+          refreshToken: null,
+        } as User);
+
+      const spyForgotRevoke = jest.spyOn(keysService, 'revoke');
+
+      const spyMailResetPasswordSuccess = jest.spyOn(
+        mailService,
+        'resetPasswordSuccess',
+      );
+
+      const response = await service.resetPassword('valid-key', 'new-password');
+
+      expect(response).toEqual({
+        data: null,
+        message: 'update new password success',
+      });
+      expect(spyForgotVerify).toBeCalledWith('valid-key');
+      expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
+        { _id: user._id },
+        { password: 'new-password', refreshToken: null },
+      );
+      expect(spyForgotRevoke).toBeCalledWith('valid-key');
+      expect(spyMailResetPasswordSuccess).toBeCalledWith(user.email, user.name);
+    });
+  });
 });

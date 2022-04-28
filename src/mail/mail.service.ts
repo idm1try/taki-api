@@ -119,4 +119,54 @@ export class MailService {
       },
     });
   }
+
+  public async forgotPassword(
+    email: string,
+    key: string,
+    name?: string,
+  ): Promise<void> {
+    return this.mailerService.sendMail({
+      to: email,
+      text: 'Reset Password',
+      subject: 'Reset Password',
+      template: '/main',
+      context: {
+        title: 'Reset Password',
+        logoUrl: this.configService.get('mail.logoUrl'),
+        appName: this.configService.get('app.name'),
+        text1: `Hello ${name || ''}`,
+        text2: 'Forgot you password?',
+        description:
+          "That's okay, it happens! Click on the button below to reset your password.",
+        hasAction: true,
+        url: `${this.configService.get(
+          'mail.callbackResetUrl',
+        )}?forgotPasswordKey=${key}`,
+        buttonLabel: 'Reset Password',
+      },
+    });
+  }
+
+  public async resetPasswordSuccess(
+    email: string,
+    name?: string,
+  ): Promise<void> {
+    return this.mailerService.sendMail({
+      to: email,
+      text: 'Reset Password Success',
+      subject: 'Reset Password Success',
+      template: '/main',
+      context: {
+        title: 'Reset Password Success',
+        logoUrl: this.configService.get('mail.logoUrl'),
+        appName: this.configService.get('app.name'),
+        text1: `Hello ${name || ''}`,
+        text2: 'Reset your password success',
+        description: 'Click on the button below to redirect to login page.',
+        hasAction: true,
+        url: this.configService.get('mail.callbackLoginUrl'),
+        buttonLabel: 'Login',
+      },
+    });
+  }
 }
