@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, SchemaDefinitionType, FilterQuery } from 'mongoose';
+import {
+  Model,
+  SchemaDefinitionType,
+  FilterQuery,
+  UpdateQuery,
+} from 'mongoose';
 import { User } from './users.schema';
 
 @Injectable()
@@ -16,5 +21,12 @@ export class UsersService {
 
   public async find(filter: FilterQuery<User>): Promise<User[]> {
     return this.userModel.find(filter).exec();
+  }
+
+  public async findOneAndUpdate(
+    filter: FilterQuery<User>,
+    newUpdates: UpdateQuery<User>,
+  ): Promise<User | undefined> {
+    return this.userModel.findOneAndUpdate(filter, newUpdates).exec();
   }
 }

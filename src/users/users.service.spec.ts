@@ -127,4 +127,42 @@ describe('UsersService', () => {
       });
     });
   });
+
+  describe('findOneAndUpdate', () => {
+    it('should return undefined if not found user', async () => {
+      jest.spyOn(model, 'findOneAndUpdate').mockReturnValueOnce(
+        createMock<Query<User, User>>({
+          exec: jest.fn().mockResolvedValueOnce(undefined),
+        }),
+      );
+
+      const result = await service.findOneAndUpdate(
+        { _id: '3' },
+        { name: 'Ross' },
+      );
+      expect(result).toBeUndefined();
+    });
+
+    it('should update user if filter matched', async () => {
+      const spyModelFindOneAndUpdate = jest
+        .spyOn(model, 'findOneAndUpdate')
+        .mockReturnValueOnce(
+          createMock<Query<User, User>>({
+            exec: jest
+              .fn()
+              .mockResolvedValueOnce(createUserDoc({ name: 'Updated Name' })),
+          }),
+        );
+
+      const result = await service.findOneAndUpdate(
+        { _id: '1' },
+        { name: 'Updated Name' },
+      );
+      expect(result).toEqual(createUserDoc({ name: 'Updated Name' }));
+      expect(spyModelFindOneAndUpdate).toBeCalledWith(
+        { _id: '1' },
+        { name: 'Updated Name' },
+      );
+    });
+  });
 });
