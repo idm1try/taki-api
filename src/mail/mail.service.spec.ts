@@ -106,4 +106,50 @@ describe('MailService', () => {
       },
     });
   });
+
+  it('verifyEmail should send email', async () => {
+    const mockVerifyKey = 'verify-key';
+    await service.verifyEmail(mockEmail, mockVerifyKey, mockName);
+
+    expect(spyMailerSendMail).toBeCalledWith({
+      to: mockEmail,
+      text: 'Verify Email',
+      subject: 'Verify Email',
+      template: '/main',
+      context: {
+        title: 'Verify Email',
+        logoUrl: configService.get('mail.logoUrl'),
+        appName: configService.get('app.name'),
+        text1: `Hello ${mockName || ''}`,
+        text2: 'Verify your email address',
+        description:
+          'Simply click on the button below to verify your email address.',
+        hasAction: true,
+        url: `${configService.get(
+          'mail.callbackVerifyUrl',
+        )}?verifyKey=${mockVerifyKey}`,
+        buttonLabel: 'Verify',
+      },
+    });
+  });
+
+  it('verifyEmailSuccess should send email', async () => {
+    await service.verifyEmailSuccess(mockEmail, mockName);
+
+    expect(spyMailerSendMail).toBeCalledWith({
+      to: mockEmail,
+      text: 'Verify Email Success',
+      subject: 'Verify Email Success',
+      template: '/main',
+      context: {
+        title: 'Verify Email Success',
+        logoUrl: configService.get('mail.logoUrl'),
+        appName: configService.get('app.name'),
+        text1: `Hello ${mockName || ''}`,
+        text2: 'Verify account success!',
+        description: 'Your account is verified.',
+        hasAction: false,
+      },
+    });
+  });
 });

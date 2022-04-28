@@ -5,7 +5,7 @@ import { Hashing } from '../utils';
 
 @Schema({ timestamps: true })
 export class Key extends Document {
-  @Prop({ required: true, unique: true })
+  @Prop({ required: false, unique: true })
   key?: string;
 
   @Prop({ type: Types.ObjectId, unique: true, required: true, ref: User.name })

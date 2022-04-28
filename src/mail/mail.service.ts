@@ -74,4 +74,49 @@ export class MailService {
       },
     });
   }
+
+  public async verifyEmail(
+    email: string,
+    key: string,
+    name?: string,
+  ): Promise<void> {
+    return this.mailerService.sendMail({
+      to: email,
+      text: 'Verify Email',
+      subject: 'Verify Email',
+      template: '/main',
+      context: {
+        title: 'Verify Email',
+        logoUrl: this.configService.get('mail.logoUrl'),
+        appName: this.configService.get('app.name'),
+        text1: `Hello ${name || ''}`,
+        text2: 'Verify your email address',
+        description:
+          'Simply click on the button below to verify your email address.',
+        hasAction: true,
+        url: `${this.configService.get(
+          'mail.callbackVerifyUrl',
+        )}?verifyKey=${key}`,
+        buttonLabel: 'Verify',
+      },
+    });
+  }
+
+  public async verifyEmailSuccess(email: string, name?: string): Promise<void> {
+    return this.mailerService.sendMail({
+      to: email,
+      text: 'Verify Email Success',
+      subject: 'Verify Email Success',
+      template: '/main',
+      context: {
+        title: 'Verify Email Success',
+        logoUrl: this.configService.get('mail.logoUrl'),
+        appName: this.configService.get('app.name'),
+        text1: `Hello ${name || ''}`,
+        text2: 'Verify account success!',
+        description: 'Your account is verified.',
+        hasAction: false,
+      },
+    });
+  }
 }

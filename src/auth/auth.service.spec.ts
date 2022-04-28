@@ -9,7 +9,8 @@ import { KeysService } from '../keys/keys.service';
 import { MailService } from '../mail/mail.service';
 import { createMockFromClass } from '../../test/utils/createMockFromClass';
 import { Hashing } from '../utils';
-import { UserProfileSerialization } from 'src/users/serializations/user-profile.serialization';
+import { UserProfileSerialization } from '../users/serializations/user-profile.serialization';
+import { Key } from '../keys/keys.schema';
 
 const createUserDoc = (override: Partial<User> = {}): Partial<User> => ({
   _id: '1',
@@ -23,6 +24,7 @@ describe('AuthService', () => {
   let configService: ConfigService;
   let userService: UsersService;
   let mailService: MailService;
+  let keysService: KeysService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -56,6 +58,7 @@ describe('AuthService', () => {
     jwtService = module.get<JwtService>(JwtService);
     configService = module.get<ConfigService>(ConfigService);
     mailService = module.get<MailService>(MailService);
+    keysService = module.get<KeysService>(KeysService);
   });
 
   it('should be defined', () => {
@@ -580,6 +583,134 @@ describe('AuthService', () => {
       expect(spyUserServiceFindOne).toBeCalledWith({ _id: user._id });
       expect(spyUserServiceDelete).toBeCalledWith(user._id);
       expect(spyMailDeleteAccountSuccess).toBeCalledWith(user.email, user.name);
+    });
+  });
+
+  describe('verifyEmail', () => {
+    it('should throw error when user is not exist', async () => {
+      jest.spyOn(userService, 'findOne').mockResolvedValueOnce(undefined);
+
+      try {
+        await service.verifyEmail('9');
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error.response).toEqual({
+          status: HttpStatus.NOT_FOUND,
+          errors: {
+            user: 'user is not exist',
+          },
+        });
+      }
+    });
+
+    it('should throw error when user not had email', async () => {
+      const user = createUserDoc();
+      jest.spyOn(userService, 'findOne').mockResolvedValueOnce(user as User);
+
+      try {
+        await service.verifyEmail(user._id);
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error.response).toEqual({
+          status: HttpStatus.CONFLICT,
+          errors: {
+            user: 'account not had email to verify',
+          },
+        });
+      }
+    });
+
+    it('should throw error when user verified', async () => {
+      const user = createUserDoc({ email: 'test@gmail.com', isVerify: true });
+
+      jest.spyOn(userService, 'findOne').mockResolvedValueOnce(user as User);
+
+      try {
+        await service.verifyEmail(user._id);
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error.response).toEqual({
+          status: HttpStatus.CONFLICT,
+          errors: {
+            user: 'user is already verify',
+          },
+        });
+      }
+    });
+
+    it('should send verify email and response to client', async () => {
+      const user = createUserDoc({ email: 'test@gmail.com', isVerify: false });
+      const spyUserServiceFindOne = jest
+        .spyOn(userService, 'findOne')
+        .mockResolvedValueOnce(user as User);
+
+      const spyKeyServiceCreate = jest
+        .spyOn(keysService, 'create')
+        .mockResolvedValueOnce({
+          id: '2',
+          key: 'verify-key',
+          user: user,
+        } as Key);
+
+      const spyMailVerifyEmail = jest.spyOn(mailService, 'verifyEmail');
+
+      const response = await service.verifyEmail(user._id);
+      expect(response).toEqual({
+        data: null,
+        message: 'verify account email is sent',
+      });
+      expect(spyUserServiceFindOne).toBeCalledWith({ _id: user._id });
+      expect(spyKeyServiceCreate).toBeCalledWith(user._id);
+      expect(spyMailVerifyEmail).toBeCalledWith(
+        user.email,
+        'verify-key',
+        user.name,
+      );
+    });
+  });
+
+  describe('confirmVerifyEmail', () => {
+    it('should throw error when verifyKey expired or invalid', async () => {
+      jest.spyOn(keysService, 'verify').mockResolvedValueOnce(undefined);
+
+      try {
+        await service.confirmVerifyEmail('invalid-key');
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error.response).toEqual({
+          status: HttpStatus.NOT_ACCEPTABLE,
+          errors: {
+            verifyKey: 'verifyKey is expired or invalid',
+          },
+        });
+      }
+    });
+
+    it('should send email and response status', async () => {
+      const user = createUserDoc({ email: 'test@gmail.com', isVerify: false });
+      const spyKeysServiceVerify = jest
+        .spyOn(keysService, 'verify')
+        .mockResolvedValueOnce({
+          _id: '1',
+          key: 'valid-key',
+          user: user,
+        } as Key);
+      const spyUserServiceFindOneAndUpdate = jest
+        .spyOn(userService, 'findOneAndUpdate')
+        .mockResolvedValueOnce({ ...user, isVerify: true } as User);
+      const spyMailVerifyEmailSuccess = jest.spyOn(
+        mailService,
+        'verifyEmailSuccess',
+      );
+
+      const response = await service.confirmVerifyEmail('valid-key');
+      expect(response).toEqual({ data: null, message: 'verify email success' });
+      expect(spyKeysServiceVerify).toBeCalledWith('valid-key');
+      expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
+        { _id: user._id },
+        { isVerify: true },
+      );
+      expect(spyMailVerifyEmailSuccess).toBeCalledWith(user.email, user.name);
     });
   });
 });

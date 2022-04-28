@@ -7,6 +7,8 @@ import {
   HttpStatus,
   Patch,
   Post,
+  Put,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -122,5 +124,34 @@ export class AuthController {
     @Body() deleteAccountDto: DeleteAccountDto,
   ) {
     return this.authService.deleteAccount(user.userId, deleteAccountDto);
+  }
+
+  @Get('verify')
+  @UseGuards(JwtAccessGuard)
+  @ApiOkResponse({
+    type: ResponseSuccess,
+    description: 'Request success, return message',
+  })
+  @ApiConflictResponse({
+    type: ResponseError,
+    description: 'Request failed, return errors',
+  })
+  @HttpCode(HttpStatus.OK)
+  verifyEmail(@Req() { user }: RequestWithParsedPayload) {
+    return this.authService.verifyEmail(user.userId);
+  }
+
+  @Put('verify')
+  @ApiOkResponse({
+    type: ResponseSuccess,
+    description: 'Request success, return message',
+  })
+  @ApiConflictResponse({
+    type: ResponseError,
+    description: 'Request failed, return errors',
+  })
+  @HttpCode(HttpStatus.OK)
+  confirmVerifyEmail(@Query('verifyKey') verifyKey: string) {
+    return this.authService.confirmVerifyEmail(verifyKey);
   }
 }

@@ -10,6 +10,7 @@ import { SigninEmailDto } from './dtos/signin-email.dto';
 import { Hashing } from '../utils';
 import { UserProfileSerialization } from '../users/serializations/user-profile.serialization';
 import { DeleteAccountDto } from './dtos/delete-account.dto';
+import { KeysService } from '../keys/keys.service';
 
 @Injectable()
 export class AuthService {
@@ -18,6 +19,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
+    private readonly keysService: KeysService,
   ) {}
 
   public async generateTokens(payload: Payload): Promise<Tokens> {
@@ -201,5 +203,52 @@ export class AuthService {
       deletedAccount.name,
     );
     return APIResponse.Success(null, 'account deleted');
+  }
+
+  public async verifyEmail(userId: string): IAPIResponse<null> {
+    const user = await this.usersService.findOne({ _id: userId });
+    if (!user) {
+      throw APIResponse.Error(HttpStatus.NOT_FOUND, {
+        user: 'user is not exist',
+      });
+    }
+    if (!user.email) {
+      throw APIResponse.Error(HttpStatus.CONFLICT, {
+        user: 'account not had email to verify',
+      });
+    }
+
+    if (user.isVerify) {
+      throw APIResponse.Error(HttpStatus.CONFLICT, {
+        user: 'user is already verify',
+      });
+    }
+
+    const verifyKey = await this.keysService.create(user._id);
+    await this.mailService.verifyEmail(user.email, verifyKey.key, user.name);
+    return APIResponse.Success(null, 'verify account email is sent');
+  }
+
+  public async confirmVerifyEmail(key: string) {
+    const verifyKey = await this.keysService.verify(key);
+    if (!verifyKey) {
+      throw APIResponse.Error(HttpStatus.NOT_ACCEPTABLE, {
+        verifyKey: 'verifyKey is expired or invalid',
+      });
+    }
+
+    const user = await this.usersService.findOneAndUpdate(
+      { _id: verifyKey.user._id },
+      { isVerify: true },
+    );
+
+    if (!user) {
+      throw APIResponse.Error(HttpStatus.NOT_ACCEPTABLE, {
+        verifyKey: 'verifyKey is expired or invalid',
+      });
+    }
+    await this.keysService.revoke(key);
+    await this.mailService.verifyEmailSuccess(user.email, user.name);
+    return APIResponse.Success(null, 'verify email success');
   }
 }
