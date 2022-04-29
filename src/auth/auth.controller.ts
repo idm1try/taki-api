@@ -18,13 +18,14 @@ import { AuthService } from './auth.service';
 import { SignupDto } from './dtos/signup.dto';
 import { SigninEmailDto } from './dtos/signin-email.dto';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
-import { RequestWithParsedPayload } from './auth.interfaces';
+import { RequestWithParsedPayload } from './auth.type';
 import { JwtAccessGuard } from './guards/jwt-access.guard';
 import { UpdatePasswordDto } from './dtos/update-password.dto';
 import { DeleteAccountDto } from './dtos/delete-account.dto';
 import { UpdateAccountDto } from './dtos/update-account.dto';
 import { GoogleDto } from './dtos/google.dto';
 import { FacebookDto } from './dtos/facebook.dto';
+import { DisconnectAccountDto } from './dtos/disconnect-account.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -280,5 +281,26 @@ export class AuthController {
     @Body() connectEmailDto: SigninEmailDto,
   ) {
     return this.authService.connectEmail(req.user.userId, connectEmailDto);
+  }
+
+  @Put('unlink-account')
+  @ApiOkResponse({
+    type: ResponseSuccess,
+    description: 'disconnect account success, return user info',
+  })
+  @ApiConflictResponse({
+    type: ResponseError,
+    description: 'disconnect account failed, return errors',
+  })
+  @UseGuards(JwtAccessGuard)
+  @HttpCode(HttpStatus.OK)
+  unlinkAccount(
+    @Req() req: RequestWithParsedPayload,
+    @Body() disconnectAccountDto: DisconnectAccountDto,
+  ) {
+    return this.authService.unlinkAccount(
+      req.user.userId,
+      disconnectAccountDto.type,
+    );
   }
 }

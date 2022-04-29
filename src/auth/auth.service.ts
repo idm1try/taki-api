@@ -2,7 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
-import { Payload, Tokens } from './auth.interfaces';
+import { AccountType, Payload, Tokens } from './auth.type';
 import { APIResponse, IAPIResponse } from '../helpers/response.helper';
 import { SignupDto } from './dtos/signup.dto';
 import { MailService } from '../mail/mail.service';
@@ -14,6 +14,7 @@ import { KeysService } from '../keys/keys.service';
 import { UpdateAccountDto } from './dtos/update-account.dto';
 import { AuthGoogleService } from '../auth-google/auth-google.service';
 import { AuthFacebookService } from '../auth-facebook/auth-facebook.service';
+import { User } from '../users/users.schema';
 
 @Injectable()
 export class AuthService {
@@ -582,5 +583,46 @@ export class AuthService {
     );
 
     return APIResponse.Success(null, 'connect email success');
+  }
+
+  private countAuthMethods(user: User): number {
+    let count = 0;
+    if (user.email) count++;
+    if (user.google?.id) count++;
+    if (user.facebook?.id) count++;
+    return count;
+  }
+
+  public async unlinkAccount(userId: string, accountType: AccountType) {
+    const user = await this.usersService.findOne({ _id: userId });
+    const numSigninMethods = this.countAuthMethods(user);
+    if (numSigninMethods < 2) {
+      throw APIResponse.Error(HttpStatus.BAD_REQUEST, {
+        auth: 'account need at least 1 signin method',
+      });
+    }
+
+    switch (accountType) {
+      case AccountType.Google:
+        this.usersService.findOneAndUpdate(
+          { _id: userId },
+          { $unset: { google: '' } },
+        );
+        break;
+      case AccountType.Facebook:
+        this.usersService.findOneAndUpdate(
+          { _id: userId },
+          { $unset: { facebook: '' } },
+        );
+        break;
+      default:
+        this.usersService.findOneAndUpdate(
+          { _id: userId },
+          { $unset: { email: '', password: '', isVerify: '' } },
+        );
+        break;
+    }
+
+    return APIResponse.Success(null, `unlink ${accountType} success`);
   }
 }

@@ -16,6 +16,7 @@ import { AuthGoogleService } from '../auth-google/auth-google.service';
 import { AuthFacebookService } from '../auth-facebook/auth-facebook.service';
 import { FacebookAccountInfo } from '../auth-facebook/auth-facebook.type';
 import { GoogleAccountInfo } from '../auth-google/auth-google.type';
+import { AccountType } from './auth.type';
 
 const createUserDoc = (override: Partial<User> = {}): Partial<User> => ({
   _id: '1',
@@ -1660,6 +1661,119 @@ describe('AuthService', () => {
       expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
         { _id: user._id },
         { email: user.email, password: user.password },
+      );
+    });
+  });
+
+  describe('unlinkAccount', () => {
+    it('should throw error when account had only one signin method', async () => {
+      const user = createUserDoc({ email: 'test@gmail.com' });
+
+      jest.spyOn(userService, 'findOne').mockResolvedValueOnce(user as User);
+
+      try {
+        await service.unlinkAccount('1', AccountType.Email);
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error.response).toEqual({
+          status: HttpStatus.BAD_REQUEST,
+          errors: {
+            auth: 'account need at least 1 signin method',
+          },
+        });
+      }
+    });
+
+    it('should unlink google account', async () => {
+      const user = createUserDoc({
+        email: 'test@gmail.com',
+        password: 'hashed-secret',
+        google: { id: 'google-id', email: 'test@gmail.com' },
+      });
+
+      const spyUserServiceFindOne = jest
+        .spyOn(userService, 'findOne')
+        .mockResolvedValueOnce(user as User);
+
+      const spyUserServiceFindOneAndUpdate = jest
+        .spyOn(userService, 'findOneAndUpdate')
+        .mockResolvedValueOnce({ ...user, google: null } as User);
+
+      const response = await service.unlinkAccount(
+        user._id,
+        AccountType.Google,
+      );
+      expect(response).toEqual({
+        data: null,
+        message: 'unlink google success',
+      });
+      expect(spyUserServiceFindOne).toBeCalledWith({ _id: user._id });
+      expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
+        { _id: user._id },
+        { $unset: { google: '' } },
+      );
+    });
+
+    it('should unlink facebook account', async () => {
+      const user = createUserDoc({
+        email: 'test@gmail.com',
+        password: 'hashed-secret',
+        facebook: { id: 'facebook-id', email: 'test@gmail.com' },
+      });
+
+      const spyUserServiceFindOne = jest
+        .spyOn(userService, 'findOne')
+        .mockResolvedValueOnce(user as User);
+
+      const spyUserServiceFindOneAndUpdate = jest
+        .spyOn(userService, 'findOneAndUpdate')
+        .mockResolvedValueOnce({ ...user, facebook: null } as User);
+
+      const response = await service.unlinkAccount(
+        user._id,
+        AccountType.Facebook,
+      );
+      expect(response).toEqual({
+        data: null,
+        message: 'unlink facebook success',
+      });
+      expect(spyUserServiceFindOne).toBeCalledWith({ _id: user._id });
+      expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
+        { _id: user._id },
+        { $unset: { facebook: '' } },
+      );
+    });
+
+    it('should unlink email', async () => {
+      const user = createUserDoc({
+        email: 'test@gmail.com',
+        password: 'hashed-secret',
+        isVerify: true,
+        facebook: { id: 'facebook-id', email: 'test@gmail.com' },
+      });
+
+      const spyUserServiceFindOne = jest
+        .spyOn(userService, 'findOne')
+        .mockResolvedValueOnce(user as User);
+
+      const spyUserServiceFindOneAndUpdate = jest
+        .spyOn(userService, 'findOneAndUpdate')
+        .mockResolvedValueOnce({
+          ...user,
+          email: null,
+          password: null,
+          isVerify: false,
+        } as User);
+
+      const response = await service.unlinkAccount(user._id, AccountType.Email);
+      expect(response).toEqual({
+        data: null,
+        message: 'unlink email success',
+      });
+      expect(spyUserServiceFindOne).toBeCalledWith({ _id: user._id });
+      expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
+        { _id: user._id },
+        { $unset: { email: '', password: '', isVerify: '' } },
       );
     });
   });

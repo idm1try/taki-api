@@ -1,20 +1,26 @@
 import { Request } from 'express';
 
-export interface Payload {
+export type Payload = {
   userId: string;
-}
+};
 
 export type Tokens = {
   accessToken: string;
   refreshToken: string;
 };
 
-export interface ParsedUserPayload {
+export type ParsedUserPayload = {
   userId: string;
   refreshToken?: string;
   email?: string;
-}
+};
 
-export interface RequestWithParsedPayload extends Request {
+export type RequestWithParsedPayload = {
   user: ParsedUserPayload;
+} & Request;
+
+export enum AccountType {
+  Email = 'email',
+  Facebook = 'facebook',
+  Google = 'google',
 }
