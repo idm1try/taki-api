@@ -11,6 +11,8 @@ import { createMockFromClass } from '../../test/utils/createMockFromClass';
 import { Hashing } from '../utils';
 import { UserProfileSerialization } from '../users/serializations/user-profile.serialization';
 import { Key } from '../keys/keys.schema';
+import { APIResponse } from '../helpers';
+import { AuthGoogleService } from '../auth-google/auth-google.service';
 
 const createUserDoc = (override: Partial<User> = {}): Partial<User> => ({
   _id: '1',
@@ -25,6 +27,7 @@ describe('AuthService', () => {
   let userService: UsersService;
   let mailService: MailService;
   let keysService: KeysService;
+  let authGoogleService: AuthGoogleService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -50,6 +53,10 @@ describe('AuthService', () => {
           provide: MailService,
           useValue: createMockFromClass(MailService),
         },
+        {
+          provide: AuthGoogleService,
+          useValue: createMockFromClass(AuthGoogleService),
+        },
       ],
     }).compile();
 
@@ -59,6 +66,7 @@ describe('AuthService', () => {
     configService = module.get<ConfigService>(ConfigService);
     mailService = module.get<MailService>(MailService);
     keysService = module.get<KeysService>(KeysService);
+    authGoogleService = module.get<AuthGoogleService>(AuthGoogleService);
   });
 
   it('should be defined', () => {
@@ -1017,6 +1025,285 @@ describe('AuthService', () => {
       expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
         { _id: user._id },
         { name: 'New Test Name', email: 'newtest@gmail.com' },
+      );
+    });
+  });
+
+  describe('googleSignIn', () => {
+    it('should throw error when google access token invalid', async () => {
+      jest.spyOn(authGoogleService, 'verify').mockRejectedValueOnce(
+        APIResponse.Error(HttpStatus.BAD_REQUEST, {
+          googleAccessToken: 'google accessToken invalid',
+        }),
+      );
+
+      try {
+        await service.googleSignIn('invalid-google-access-token');
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error.response).toEqual({
+          status: HttpStatus.BAD_REQUEST,
+          errors: {
+            googleAccessToken: 'google accessToken invalid',
+          },
+        });
+      }
+    });
+
+    it('should create new account and return tokens if not exist', async () => {
+      const user = createUserDoc({
+        name: 'Test Name',
+        google: {
+          id: 'google-id',
+          email: 'test@gmail.com',
+        },
+      });
+
+      const spyAuthGoogleServiceVerify = jest
+        .spyOn(authGoogleService, 'verify')
+        .mockResolvedValueOnce({ name: user.name, ...user.google });
+
+      const spyUserServiceFindOne = jest
+        .spyOn(userService, 'findOne')
+        .mockResolvedValueOnce(undefined);
+
+      const spyUserServiceCreate = jest
+        .spyOn(userService, 'create')
+        .mockResolvedValueOnce(user as User);
+
+      const spyJwtSign = jest
+        .spyOn(jwtService, 'sign')
+        .mockResolvedValueOnce('at' as never)
+        .mockResolvedValueOnce('rt' as never);
+
+      const spyUserServiceFindOneAndUpdate = jest
+        .spyOn(userService, 'findOneAndUpdate')
+        .mockResolvedValueOnce({ ...user, refreshToken: 'hashed-rt' } as User);
+
+      const spyMailSignupSuccess = jest.spyOn(mailService, 'signupSuccess');
+
+      const tokens = await service.googleSignIn('valid-google-access-token');
+
+      expect(tokens).toEqual({
+        data: { accessToken: 'at', refreshToken: 'rt' },
+        message: 'signin with google for new user success',
+      });
+
+      expect(spyAuthGoogleServiceVerify).toBeCalledWith(
+        'valid-google-access-token',
+      );
+      expect(spyUserServiceFindOne).toBeCalledWith({
+        'google.id': user.google.id,
+      });
+      expect(spyUserServiceCreate).toBeCalledWith({
+        google: { id: user.google.id, email: user.google.email },
+        name: user.name,
+      });
+      expect(spyJwtSign).toHaveBeenNthCalledWith(
+        1,
+        {
+          userId: user._id,
+        },
+        {
+          secret: configService.get('auth.jwt.accessSecret'),
+          expiresIn: 60 * 15,
+        },
+      );
+      expect(spyJwtSign).toHaveBeenNthCalledWith(
+        2,
+        {
+          userId: user._id,
+        },
+        {
+          secret: configService.get('auth.jwt.refreshSecret'),
+          expiresIn: 60 * 60 * 24 * 7,
+        },
+      );
+      expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
+        { _id: user._id },
+        { refreshToken: 'rt' },
+      );
+      expect(spyMailSignupSuccess).toBeCalledWith(user.google.email, user.name);
+    });
+
+    it('should return new tokens if exist google account', async () => {
+      const user = createUserDoc({
+        name: 'Test Name',
+        google: {
+          id: 'google-id',
+          email: 'test@gmail.com',
+        },
+      });
+
+      const spyAuthGoogleServiceVerify = jest
+        .spyOn(authGoogleService, 'verify')
+        .mockResolvedValueOnce({ name: user.name, ...user.google });
+
+      const spyUserServiceFindOne = jest
+        .spyOn(userService, 'findOne')
+        .mockResolvedValueOnce(user as User);
+
+      const spyJwtSign = jest
+        .spyOn(jwtService, 'sign')
+        .mockResolvedValueOnce('at' as never)
+        .mockResolvedValueOnce('rt' as never);
+
+      const spyUserServiceFindOneAndUpdate = jest
+        .spyOn(userService, 'findOneAndUpdate')
+        .mockResolvedValueOnce({ ...user, refreshToken: 'hashed-rt' } as User);
+
+      const tokens = await service.googleSignIn('valid-google-access-token');
+
+      expect(tokens).toEqual({
+        data: { accessToken: 'at', refreshToken: 'rt' },
+        message: 'signin with google success',
+      });
+
+      expect(spyAuthGoogleServiceVerify).toBeCalledWith(
+        'valid-google-access-token',
+      );
+      expect(spyUserServiceFindOne).toBeCalledWith({
+        'google.id': user.google.id,
+      });
+      expect(spyJwtSign).toHaveBeenNthCalledWith(
+        1,
+        {
+          userId: user._id,
+        },
+        {
+          secret: configService.get('auth.jwt.accessSecret'),
+          expiresIn: 60 * 15,
+        },
+      );
+      expect(spyJwtSign).toHaveBeenNthCalledWith(
+        2,
+        {
+          userId: user._id,
+        },
+        {
+          secret: configService.get('auth.jwt.refreshSecret'),
+          expiresIn: 60 * 60 * 24 * 7,
+        },
+      );
+      expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
+        { _id: user._id },
+        { refreshToken: 'rt' },
+      );
+    });
+  });
+
+  describe('connectGoogle', () => {
+    it('should throw error when account already connected with google account', async () => {
+      const user = createUserDoc({
+        google: { id: 'google-id', email: 'test@gmail.com' },
+      });
+
+      jest.spyOn(userService, 'findOne').mockResolvedValueOnce(user as User);
+
+      try {
+        await service.connectGoogle(user._id, 'valid-google-access-token');
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error.response).toEqual({
+          status: HttpStatus.CONFLICT,
+          errors: {
+            googleId: 'your account already connect with google',
+          },
+        });
+      }
+    });
+
+    it('should throw error when google access token invalid', async () => {
+      const user = createUserDoc({
+        google: { id: 'google-id', email: 'test@gmail.com' },
+      });
+
+      jest
+        .spyOn(userService, 'findOne')
+        .mockResolvedValueOnce({ ...user, google: null } as User);
+
+      jest.spyOn(authGoogleService, 'verify').mockResolvedValueOnce(undefined);
+
+      try {
+        await service.connectGoogle(user._id, 'invalid-google-access-token');
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error.response).toEqual({
+          status: HttpStatus.BAD_REQUEST,
+          errors: {
+            googleAccessToken: 'google accessToken invalid',
+          },
+        });
+      }
+    });
+
+    it('should throw error when this google account is used for another account', async () => {
+      const user = createUserDoc({
+        google: { id: 'google-id', email: 'test@gmail.com' },
+      });
+
+      jest
+        .spyOn(userService, 'findOne')
+        .mockResolvedValueOnce({ ...user, google: null } as User)
+        .mockResolvedValueOnce({ ...user, _id: '2' } as User);
+
+      jest
+        .spyOn(authGoogleService, 'verify')
+        .mockResolvedValueOnce({ name: user.name, ...user.google });
+
+      try {
+        await service.connectGoogle(user._id, 'valid-google-access-token');
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error.response).toEqual({
+          status: HttpStatus.BAD_REQUEST,
+          errors: {
+            googleAccount:
+              'this google account already connect to another account',
+          },
+        });
+      }
+    });
+
+    it('should connect to email account', async () => {
+      const user = createUserDoc({
+        google: { id: 'google-id', email: 'test@gmail.com' },
+      });
+
+      const spyUserServiceFindOne = jest
+        .spyOn(userService, 'findOne')
+        .mockResolvedValueOnce({ ...user, google: null } as User)
+        .mockResolvedValueOnce(undefined);
+
+      const spyAuthGoogleServiceVerify = jest
+        .spyOn(authGoogleService, 'verify')
+        .mockResolvedValueOnce({ name: user.name, ...user.google });
+
+      const spyUserServiceFindOneAndUpdate = jest
+        .spyOn(userService, 'findOneAndUpdate')
+        .mockResolvedValueOnce(user as User);
+
+      const result = await service.connectGoogle(
+        user._id,
+        'valid-google-access-token',
+      );
+
+      expect(result).toEqual({
+        data: null,
+        message: 'connect google account success',
+      });
+      expect(spyUserServiceFindOne).toHaveBeenNthCalledWith(1, {
+        _id: user._id,
+      });
+      expect(spyAuthGoogleServiceVerify).toBeCalledWith(
+        'valid-google-access-token',
+      );
+      expect(spyUserServiceFindOne).toHaveBeenNthCalledWith(2, {
+        'google.id': user.google.id,
+      });
+      expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
+        { _id: user._id },
+        { google: user.google },
       );
     });
   });

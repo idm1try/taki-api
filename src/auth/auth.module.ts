@@ -9,6 +9,7 @@ import { UsersModule } from '../users/users.module';
 import { AuthService } from './auth.service';
 import { KeysModule } from '../keys/keys.module';
 import { MailModule } from '../mail/mail.module';
+import { AuthGoogleModule } from '../auth-google/auth-google.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { MailModule } from '../mail/mail.module';
     JwtModule.register({}),
     KeysModule,
     MailModule,
+    AuthGoogleModule,
   ],
   providers: [AuthService, JwtAccessStrategy, JwtRefreshStrategy],
   controllers: [AuthController],

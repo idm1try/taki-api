@@ -4,7 +4,7 @@ export const createMockFromClass = <T>(origin: T & { prototype: any }) => {
   );
 
   const value: {
-    [K in keyof T]?: jest.Mock<T[K]> | Function;
+    [K in keyof T]?: jest.Mock<T[K]>;
   } = {};
   for (const method of methods) {
     value[method] = jest.fn();
