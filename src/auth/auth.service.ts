@@ -12,6 +12,7 @@ import { UserProfileSerialization } from '../users/serializations/user-profile.s
 import { DeleteAccountDto } from './dtos/delete-account.dto';
 import { KeysService } from '../keys/keys.service';
 import { UpdateAccountDto } from './dtos/update-account.dto';
+import { AuthGoogleService } from '../auth-google/auth-google.service';
 
 @Injectable()
 export class AuthService {
@@ -21,6 +22,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
     private readonly keysService: KeysService,
+    private readonly authGoogleService: AuthGoogleService,
   ) {}
 
   public async generateTokens(payload: Payload): Promise<Tokens> {
@@ -360,5 +362,100 @@ export class AuthService {
     );
 
     return APIResponse.Success(null, 'update account info success');
+  }
+
+  public async googleSignIn(
+    googleAccessToken: string,
+  ): Promise<IAPIResponse<Tokens>> {
+    const googleUserInfo = await this.authGoogleService.verify(
+      googleAccessToken,
+    );
+    if (!googleUserInfo) {
+      throw APIResponse.Error(HttpStatus.BAD_REQUEST, {
+        googleAccessToken: 'google accessToken invalid',
+      });
+    }
+
+    const user = await this.usersService.findOne({
+      'google.id': googleUserInfo.id,
+    });
+
+    // If not exist account create one
+    if (!user) {
+      const newUser = await this.usersService.create({
+        name: googleUserInfo.name,
+        google: {
+          id: googleUserInfo.id,
+          email: googleUserInfo.email,
+        },
+      });
+
+      const tokens = await this.generateTokens({
+        userId: newUser._id,
+      });
+
+      await this.usersService.findOneAndUpdate(
+        { _id: newUser._id },
+        {
+          refreshToken: tokens.refreshToken,
+        },
+      );
+
+      // Only send email notification when signin first time
+      await this.mailService.signupSuccess(newUser.google.email, newUser.name);
+
+      return APIResponse.Success(
+        tokens,
+        'signin with google for new user success',
+      );
+    }
+
+    const tokens = await this.generateTokens({
+      userId: user._id,
+    });
+
+    await this.usersService.findOneAndUpdate(
+      { _id: user._id },
+      {
+        refreshToken: tokens.refreshToken,
+      },
+    );
+
+    return APIResponse.Success(tokens, 'signin with google success');
+  }
+
+  public async connectGoogle(userId: string, googleAccessToken: string) {
+    const user = await this.usersService.findOne({ _id: userId });
+    if (user?.google?.id) {
+      throw APIResponse.Error(HttpStatus.CONFLICT, {
+        googleId: 'your account already connect with google',
+      });
+    }
+
+    const googleUserInfo = await this.authGoogleService.verify(
+      googleAccessToken,
+    );
+
+    if (!googleUserInfo) {
+      throw APIResponse.Error(HttpStatus.BAD_REQUEST, {
+        googleAccessToken: 'google accessToken invalid',
+      });
+    }
+
+    const isConnectedToAnotherAccount = await this.usersService.findOne({
+      'google.id': googleUserInfo.id,
+    });
+    if (isConnectedToAnotherAccount) {
+      throw APIResponse.Error(HttpStatus.BAD_REQUEST, {
+        googleAccount: 'this google account already connect to another account',
+      });
+    }
+
+    await this.usersService.findOneAndUpdate(
+      { _id: userId },
+      { google: { id: googleUserInfo.id, email: googleUserInfo.email } },
+    );
+
+    return APIResponse.Success(null, 'connect google account success');
   }
 }

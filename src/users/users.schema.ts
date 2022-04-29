@@ -18,6 +18,15 @@ export class User extends Document {
 
   @Prop({ required: false, default: false })
   isVerify?: boolean;
+
+  @Prop({
+    required: false,
+    type: { id: String, email: String },
+  })
+  google?: {
+    id: string | null;
+    email: string | null;
+  };
 }
 
 const UserSchema = SchemaFactory.createForClass(User);

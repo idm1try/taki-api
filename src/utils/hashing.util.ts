@@ -2,7 +2,7 @@ import * as argon from 'argon2';
 import { randomBytes } from 'crypto';
 
 export class Hashing {
-  public static async createHash(length: number = 64): Promise<string> {
+  public static async createHash(length = 64): Promise<string> {
     return new Promise((resolve, reject) => {
       randomBytes(length, (error, buffer) => {
         if (error) {

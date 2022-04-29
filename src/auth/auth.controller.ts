@@ -23,6 +23,7 @@ import { JwtAccessGuard } from './guards/jwt-access.guard';
 import { UpdatePasswordDto } from './dtos/update-password.dto';
 import { DeleteAccountDto } from './dtos/delete-account.dto';
 import { UpdateAccountDto } from './dtos/update-account.dto';
+import { GoogleDto } from './dtos/google.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -189,6 +190,41 @@ export class AuthController {
     return this.authService.updateAccountInfo(
       req.user.userId,
       updateAccountInfoDto,
+    );
+  }
+
+  @Post('google')
+  @ApiOkResponse({
+    type: ResponseSuccess,
+    description: 'Signin with google success, return new tokens',
+  })
+  @ApiConflictResponse({
+    type: ResponseError,
+    description: 'Signin with google failed, return errors',
+  })
+  @HttpCode(HttpStatus.OK)
+  googleSignIn(@Body() googleDto: GoogleDto) {
+    return this.authService.googleSignIn(googleDto.accessToken);
+  }
+
+  @Put('connect-google')
+  @ApiOkResponse({
+    type: ResponseSuccess,
+    description: 'connect google account success, return user info',
+  })
+  @ApiConflictResponse({
+    type: ResponseError,
+    description: 'connect google account failed, return errors',
+  })
+  @UseGuards(JwtAccessGuard)
+  @HttpCode(HttpStatus.OK)
+  connectGoogle(
+    @Req() req: RequestWithParsedPayload,
+    @Body() googleDto: GoogleDto,
+  ) {
+    return this.authService.connectGoogle(
+      req.user.userId,
+      googleDto.accessToken,
     );
   }
 }
