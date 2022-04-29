@@ -27,6 +27,15 @@ export class User extends Document {
     id: string | null;
     email: string | null;
   };
+
+  @Prop({
+    required: false,
+    type: { id: String, email: String },
+  })
+  facebook?: {
+    id: string | null;
+    email: string | null;
+  };
 }
 
 const UserSchema = SchemaFactory.createForClass(User);
