@@ -1039,6 +1039,14 @@ describe('AuthService', () => {
   });
 
   describe('googleSignIn', () => {
+    const user = createUserDoc({
+      name: 'Test Name',
+      google: {
+        id: 'google-id',
+        email: 'test@gmail.com',
+      },
+    });
+
     it('should throw error when google access token invalid', async () => {
       jest.spyOn(authGoogleService, 'verify').mockRejectedValueOnce(
         APIResponse.Error(HttpStatus.BAD_REQUEST, {
@@ -1060,14 +1068,6 @@ describe('AuthService', () => {
     });
 
     it('should create new account and return tokens if not exist', async () => {
-      const user = createUserDoc({
-        name: 'Test Name',
-        google: {
-          id: 'google-id',
-          email: 'test@gmail.com',
-        },
-      });
-
       const spyAuthGoogleServiceVerify = jest
         .spyOn(authGoogleService, 'verify')
         .mockResolvedValueOnce({
@@ -1139,14 +1139,6 @@ describe('AuthService', () => {
     });
 
     it('should return new tokens if exist google account', async () => {
-      const user = createUserDoc({
-        name: 'Test Name',
-        google: {
-          id: 'google-id',
-          email: 'test@gmail.com',
-        },
-      });
-
       const spyAuthGoogleServiceVerify = jest
         .spyOn(authGoogleService, 'verify')
         .mockResolvedValueOnce({
@@ -1208,11 +1200,11 @@ describe('AuthService', () => {
   });
 
   describe('connectGoogle', () => {
-    it('should throw error when account already connected with google account', async () => {
-      const user = createUserDoc({
-        google: { id: 'google-id', email: 'test@gmail.com' },
-      });
+    const user = createUserDoc({
+      google: { id: 'google-id', email: 'test@gmail.com' },
+    });
 
+    it('should throw error when account already connected with google account', async () => {
       jest.spyOn(userService, 'findOne').mockResolvedValueOnce(user as User);
 
       try {
@@ -1253,10 +1245,6 @@ describe('AuthService', () => {
     });
 
     it('should throw error when this google account is used for another account', async () => {
-      const user = createUserDoc({
-        google: { id: 'google-id', email: 'test@gmail.com' },
-      });
-
       jest
         .spyOn(userService, 'findOne')
         .mockResolvedValueOnce({ ...user, google: null } as User)
@@ -1282,10 +1270,6 @@ describe('AuthService', () => {
     });
 
     it('should connect to email account', async () => {
-      const user = createUserDoc({
-        google: { id: 'google-id', email: 'test@gmail.com' },
-      });
-
       const spyUserServiceFindOne = jest
         .spyOn(userService, 'findOne')
         .mockResolvedValueOnce({ ...user, google: null } as User)
@@ -1328,6 +1312,10 @@ describe('AuthService', () => {
   });
 
   describe('facebookSignIn', () => {
+    const user = createUserDoc({
+      facebook: { id: 'facebook-id', email: 'test@gmail.com' },
+    });
+
     it('should throw error when facebook access token invalid', async () => {
       jest.spyOn(authFacebookService, 'verify').mockRejectedValueOnce(
         APIResponse.Error(HttpStatus.BAD_REQUEST, {
@@ -1349,10 +1337,6 @@ describe('AuthService', () => {
     });
 
     it('should create new account and return tokens if not exist', async () => {
-      const user = createUserDoc({
-        facebook: { id: 'facebook-id', email: 'test@gmail.com' },
-      });
-
       const spyAuthFacebookServiceVerify = jest
         .spyOn(authFacebookService, 'verify')
         .mockResolvedValueOnce({
@@ -1428,10 +1412,6 @@ describe('AuthService', () => {
     });
 
     it('should return new tokens if exist facebook account', async () => {
-      const user = createUserDoc({
-        facebook: { id: 'facebook-id', email: 'test@gmail.com' },
-      });
-
       const spyAuthFacebookServiceVerify = jest
         .spyOn(authFacebookService, 'verify')
         .mockResolvedValueOnce({
@@ -1494,11 +1474,11 @@ describe('AuthService', () => {
   });
 
   describe('connectFacebook', () => {
-    it('should throw error when account already connected with facebook account', async () => {
-      const user = createUserDoc({
-        facebook: { id: 'facebook-id', email: 'test@gmail.com' },
-      });
+    const user = createUserDoc({
+      facebook: { id: 'facebook-id', email: 'test@gmail.com' },
+    });
 
+    it('should throw error when account already connected with facebook account', async () => {
       jest.spyOn(userService, 'findOne').mockResolvedValueOnce(user as User);
 
       try {
@@ -1544,10 +1524,6 @@ describe('AuthService', () => {
     });
 
     it('should throw error when this facebook account is used for another account', async () => {
-      const user = createUserDoc({
-        facebook: { id: 'facebook-id', email: 'test@gmail.com' },
-      });
-
       jest
         .spyOn(userService, 'findOne')
         .mockResolvedValueOnce({ ...user, facebook: null } as User)
@@ -1573,10 +1549,6 @@ describe('AuthService', () => {
     });
 
     it('should connect to email account', async () => {
-      const user = createUserDoc({
-        facebook: { id: 'facebook-id', email: 'test@gmail.com' },
-      });
-
       const spyUserServiceFindOne = jest
         .spyOn(userService, 'findOne')
         .mockResolvedValueOnce({ ...user, facebook: null } as User)
