@@ -23,6 +23,9 @@ export class AuthFacebookService {
       const userInfo = await this.fb.api('me', {
         fields: ['id', 'name', 'email'],
       });
+
+      // Revoke facebook access token after get info for security
+      await this.fb.api('/me/permissions', 'delete');
       return userInfo as FacebookAccountInfo;
     } catch (error) {
       return undefined;
