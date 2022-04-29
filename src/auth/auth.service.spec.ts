@@ -1587,4 +1587,80 @@ describe('AuthService', () => {
       );
     });
   });
+
+  describe('connectEmail', () => {
+    const user = createUserDoc({ email: 'test@gmail.com', password: 'secret' });
+
+    it('should throw error when account already connected with email', async () => {
+      jest.spyOn(userService, 'findOne').mockResolvedValueOnce(user as User);
+
+      try {
+        await service.connectEmail(user._id, {
+          email: user.email,
+          password: user.password,
+        });
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error.response).toEqual({
+          status: HttpStatus.CONFLICT,
+          errors: {
+            email: 'your account already connect with email',
+          },
+        });
+      }
+    });
+
+    it('should throw error when this email is used for another account', async () => {
+      jest
+        .spyOn(userService, 'findOne')
+        .mockResolvedValueOnce({ ...user, email: null } as User)
+        .mockResolvedValueOnce({ ...user, _id: '2' } as User);
+
+      try {
+        await service.connectEmail(user._id, {
+          email: user.email,
+          password: user.password,
+        });
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error.response).toEqual({
+          status: HttpStatus.BAD_REQUEST,
+          errors: {
+            email: 'this email already connect to another account',
+          },
+        });
+      }
+    });
+
+    it('should connect to facebook/google account', async () => {
+      const spyUserServiceFindOne = jest
+        .spyOn(userService, 'findOne')
+        .mockResolvedValueOnce({ ...user, email: null } as User)
+        .mockResolvedValueOnce(undefined);
+
+      const spyUserServiceFindOneAndUpdate = jest
+        .spyOn(userService, 'findOneAndUpdate')
+        .mockResolvedValueOnce({ ...user, password: 'hashed-secret' } as User);
+
+      const result = await service.connectEmail(user._id, {
+        email: user.email,
+        password: user.password,
+      });
+
+      expect(result).toEqual({
+        data: null,
+        message: 'connect email success',
+      });
+      expect(spyUserServiceFindOne).toHaveBeenNthCalledWith(1, {
+        _id: user._id,
+      });
+      expect(spyUserServiceFindOne).toHaveBeenNthCalledWith(2, {
+        email: user.email,
+      });
+      expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
+        { _id: user._id },
+        { email: user.email, password: user.password },
+      );
+    });
+  });
 });

@@ -558,4 +558,29 @@ export class AuthService {
 
     return APIResponse.Success(null, 'connect facebook account success');
   }
+
+  public async connectEmail(userId: string, connectEmailDto: SigninEmailDto) {
+    const user = await this.usersService.findOne({ _id: userId });
+    if (user?.email) {
+      throw APIResponse.Error(HttpStatus.CONFLICT, {
+        email: 'your account already connect with email',
+      });
+    }
+
+    const userUsingThisEmail = await this.usersService.findOne({
+      email: connectEmailDto.email,
+    });
+    if (userUsingThisEmail) {
+      throw APIResponse.Error(HttpStatus.BAD_REQUEST, {
+        email: 'this email already connect to another account',
+      });
+    }
+
+    await this.usersService.findOneAndUpdate(
+      { _id: userId },
+      { email: connectEmailDto.email, password: connectEmailDto.password },
+    );
+
+    return APIResponse.Success(null, 'connect email success');
+  }
 }

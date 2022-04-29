@@ -263,4 +263,22 @@ export class AuthController {
       facebookDto.accessToken,
     );
   }
+
+  @Put('connect-email')
+  @ApiOkResponse({
+    type: ResponseSuccess,
+    description: 'connect email success, return user info',
+  })
+  @ApiConflictResponse({
+    type: ResponseError,
+    description: 'connect email failed, return errors',
+  })
+  @UseGuards(JwtAccessGuard)
+  @HttpCode(HttpStatus.OK)
+  connectEmail(
+    @Req() req: RequestWithParsedPayload,
+    @Body() connectEmailDto: SigninEmailDto,
+  ) {
+    return this.authService.connectEmail(req.user.userId, connectEmailDto);
+  }
 }
