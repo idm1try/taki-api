@@ -13,6 +13,9 @@ import { UserProfileSerialization } from '../users/serializations/user-profile.s
 import { Key } from '../keys/keys.schema';
 import { APIResponse } from '../helpers';
 import { AuthGoogleService } from '../auth-google/auth-google.service';
+import { AuthFacebookService } from '../auth-facebook/auth-facebook.service';
+import { FacebookAccountInfo } from '../auth-facebook/auth-facebook.type';
+import { GoogleAccountInfo } from '../auth-google/auth-google.type';
 
 const createUserDoc = (override: Partial<User> = {}): Partial<User> => ({
   _id: '1',
@@ -28,6 +31,7 @@ describe('AuthService', () => {
   let mailService: MailService;
   let keysService: KeysService;
   let authGoogleService: AuthGoogleService;
+  let authFacebookService: AuthFacebookService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -57,6 +61,10 @@ describe('AuthService', () => {
           provide: AuthGoogleService,
           useValue: createMockFromClass(AuthGoogleService),
         },
+        {
+          provide: AuthFacebookService,
+          useValue: createMockFromClass(AuthFacebookService),
+        },
       ],
     }).compile();
 
@@ -67,6 +75,7 @@ describe('AuthService', () => {
     mailService = module.get<MailService>(MailService);
     keysService = module.get<KeysService>(KeysService);
     authGoogleService = module.get<AuthGoogleService>(AuthGoogleService);
+    authFacebookService = module.get<AuthFacebookService>(AuthFacebookService);
   });
 
   it('should be defined', () => {
@@ -1061,7 +1070,10 @@ describe('AuthService', () => {
 
       const spyAuthGoogleServiceVerify = jest
         .spyOn(authGoogleService, 'verify')
-        .mockResolvedValueOnce({ name: user.name, ...user.google });
+        .mockResolvedValueOnce({
+          name: user.name,
+          ...user.google,
+        } as GoogleAccountInfo);
 
       const spyUserServiceFindOne = jest
         .spyOn(userService, 'findOne')
@@ -1082,9 +1094,9 @@ describe('AuthService', () => {
 
       const spyMailSignupSuccess = jest.spyOn(mailService, 'signupSuccess');
 
-      const tokens = await service.googleSignIn('valid-google-access-token');
+      const response = await service.googleSignIn('valid-google-access-token');
 
-      expect(tokens).toEqual({
+      expect(response).toEqual({
         data: { accessToken: 'at', refreshToken: 'rt' },
         message: 'signin with google for new user success',
       });
@@ -1137,7 +1149,10 @@ describe('AuthService', () => {
 
       const spyAuthGoogleServiceVerify = jest
         .spyOn(authGoogleService, 'verify')
-        .mockResolvedValueOnce({ name: user.name, ...user.google });
+        .mockResolvedValueOnce({
+          name: user.name,
+          ...user.google,
+        } as GoogleAccountInfo);
 
       const spyUserServiceFindOne = jest
         .spyOn(userService, 'findOne')
@@ -1247,9 +1262,10 @@ describe('AuthService', () => {
         .mockResolvedValueOnce({ ...user, google: null } as User)
         .mockResolvedValueOnce({ ...user, _id: '2' } as User);
 
-      jest
-        .spyOn(authGoogleService, 'verify')
-        .mockResolvedValueOnce({ name: user.name, ...user.google });
+      jest.spyOn(authGoogleService, 'verify').mockResolvedValueOnce({
+        name: user.name,
+        ...user.google,
+      } as GoogleAccountInfo);
 
       try {
         await service.connectGoogle(user._id, 'valid-google-access-token');
@@ -1277,7 +1293,10 @@ describe('AuthService', () => {
 
       const spyAuthGoogleServiceVerify = jest
         .spyOn(authGoogleService, 'verify')
-        .mockResolvedValueOnce({ name: user.name, ...user.google });
+        .mockResolvedValueOnce({
+          name: user.name,
+          ...user.google,
+        } as GoogleAccountInfo);
 
       const spyUserServiceFindOneAndUpdate = jest
         .spyOn(userService, 'findOneAndUpdate')
@@ -1304,6 +1323,295 @@ describe('AuthService', () => {
       expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
         { _id: user._id },
         { google: user.google },
+      );
+    });
+  });
+
+  describe('facebookSignIn', () => {
+    it('should throw error when facebook access token invalid', async () => {
+      jest.spyOn(authFacebookService, 'verify').mockRejectedValueOnce(
+        APIResponse.Error(HttpStatus.BAD_REQUEST, {
+          facebookAccessToken: 'facebook accessToken invalid',
+        }),
+      );
+
+      try {
+        await service.facebookSignIn('invalid-facebook-access-token');
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error.response).toEqual({
+          status: HttpStatus.BAD_REQUEST,
+          errors: {
+            facebookAccessToken: 'facebook accessToken invalid',
+          },
+        });
+      }
+    });
+
+    it('should create new account and return tokens if not exist', async () => {
+      const user = createUserDoc({
+        facebook: { id: 'facebook-id', email: 'test@gmail.com' },
+      });
+
+      const spyAuthFacebookServiceVerify = jest
+        .spyOn(authFacebookService, 'verify')
+        .mockResolvedValueOnce({
+          name: user.name,
+          ...user.facebook,
+        } as FacebookAccountInfo);
+
+      const spyUserServiceFindOne = jest
+        .spyOn(userService, 'findOne')
+        .mockResolvedValueOnce(undefined);
+
+      const spyUserServiceCreate = jest
+        .spyOn(userService, 'create')
+        .mockResolvedValueOnce(user as User);
+
+      const spyJwtSign = jest
+        .spyOn(jwtService, 'sign')
+        .mockResolvedValueOnce('at' as never)
+        .mockResolvedValueOnce('rt' as never);
+
+      const spyUserServiceFindOneAndUpdate = jest
+        .spyOn(userService, 'findOneAndUpdate')
+        .mockResolvedValueOnce({ ...user, refreshToken: 'hashed-rt' } as User);
+
+      const spyMailSignupSuccess = jest.spyOn(mailService, 'signupSuccess');
+
+      const response = await service.facebookSignIn(
+        'valid-facebook-access-token',
+      );
+      expect(response).toEqual({
+        data: { accessToken: 'at', refreshToken: 'rt' },
+        message: 'signin with facebook for new user success',
+      });
+
+      expect(spyAuthFacebookServiceVerify).toBeCalledWith(
+        'valid-facebook-access-token',
+      );
+      expect(spyUserServiceFindOne).toBeCalledWith({
+        'facebook.id': user.facebook.id,
+      });
+      expect(spyUserServiceCreate).toBeCalledWith({
+        name: user.name,
+        facebook: user.facebook,
+      });
+      expect(spyJwtSign).toHaveBeenNthCalledWith(
+        1,
+        {
+          userId: user._id,
+        },
+        {
+          secret: configService.get('auth.jwt.accessSecret'),
+          expiresIn: 60 * 15,
+        },
+      );
+      expect(spyJwtSign).toHaveBeenNthCalledWith(
+        2,
+        {
+          userId: user._id,
+        },
+        {
+          secret: configService.get('auth.jwt.refreshSecret'),
+          expiresIn: 60 * 60 * 24 * 7,
+        },
+      );
+      expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
+        { _id: user._id },
+        { refreshToken: 'rt' },
+      );
+      expect(spyMailSignupSuccess).toBeCalledWith(
+        user.facebook.email,
+        user.name,
+      );
+    });
+
+    it('should return new tokens if exist facebook account', async () => {
+      const user = createUserDoc({
+        facebook: { id: 'facebook-id', email: 'test@gmail.com' },
+      });
+
+      const spyAuthFacebookServiceVerify = jest
+        .spyOn(authFacebookService, 'verify')
+        .mockResolvedValueOnce({
+          name: user.name,
+          ...user.facebook,
+        } as FacebookAccountInfo);
+
+      const spyUserServiceFindOne = jest
+        .spyOn(userService, 'findOne')
+        .mockResolvedValueOnce(user as User);
+
+      const spyJwtSign = jest
+        .spyOn(jwtService, 'sign')
+        .mockResolvedValueOnce('at' as never)
+        .mockResolvedValueOnce('rt' as never);
+
+      const spyUserServiceFindOneAndUpdate = jest
+        .spyOn(userService, 'findOneAndUpdate')
+        .mockResolvedValueOnce({ ...user, refreshToken: 'hashed-rt' } as User);
+
+      const response = await service.facebookSignIn(
+        'valid-facebook-access-token',
+      );
+      expect(response).toEqual({
+        data: { accessToken: 'at', refreshToken: 'rt' },
+        message: 'signin with facebook success',
+      });
+
+      expect(spyAuthFacebookServiceVerify).toBeCalledWith(
+        'valid-facebook-access-token',
+      );
+      expect(spyUserServiceFindOne).toBeCalledWith({
+        'facebook.id': user.facebook.id,
+      });
+      expect(spyJwtSign).toHaveBeenNthCalledWith(
+        1,
+        {
+          userId: user._id,
+        },
+        {
+          secret: configService.get('auth.jwt.accessSecret'),
+          expiresIn: 60 * 15,
+        },
+      );
+      expect(spyJwtSign).toHaveBeenNthCalledWith(
+        2,
+        {
+          userId: user._id,
+        },
+        {
+          secret: configService.get('auth.jwt.refreshSecret'),
+          expiresIn: 60 * 60 * 24 * 7,
+        },
+      );
+      expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
+        { _id: user._id },
+        { refreshToken: 'rt' },
+      );
+    });
+  });
+
+  describe('connectFacebook', () => {
+    it('should throw error when account already connected with facebook account', async () => {
+      const user = createUserDoc({
+        facebook: { id: 'facebook-id', email: 'test@gmail.com' },
+      });
+
+      jest.spyOn(userService, 'findOne').mockResolvedValueOnce(user as User);
+
+      try {
+        await service.connectFacebook(user._id, 'valid-facebook-access-token');
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error.response).toEqual({
+          status: HttpStatus.CONFLICT,
+          errors: {
+            facebookId: 'your account already connect with facebook',
+          },
+        });
+      }
+    });
+
+    it('should throw error when facebook access token invalid', async () => {
+      const user = createUserDoc({
+        facebook: { id: 'facebook-id', email: 'test@gmail.com' },
+      });
+
+      jest
+        .spyOn(userService, 'findOne')
+        .mockResolvedValueOnce({ ...user, facebook: null } as User);
+
+      jest
+        .spyOn(authFacebookService, 'verify')
+        .mockResolvedValueOnce(undefined);
+
+      try {
+        await service.connectFacebook(
+          user._id,
+          'invalid-facebook-access-token',
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error.response).toEqual({
+          status: HttpStatus.BAD_REQUEST,
+          errors: {
+            facebookAccessToken: 'facebook accessToken invalid',
+          },
+        });
+      }
+    });
+
+    it('should throw error when this facebook account is used for another account', async () => {
+      const user = createUserDoc({
+        facebook: { id: 'facebook-id', email: 'test@gmail.com' },
+      });
+
+      jest
+        .spyOn(userService, 'findOne')
+        .mockResolvedValueOnce({ ...user, facebook: null } as User)
+        .mockResolvedValueOnce({ ...user, _id: '2' } as User);
+
+      jest.spyOn(authFacebookService, 'verify').mockResolvedValueOnce({
+        name: user.name,
+        ...user.facebook,
+      } as FacebookAccountInfo);
+
+      try {
+        await service.connectFacebook(user._id, 'valid-facebook-access-token');
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect(error.response).toEqual({
+          status: HttpStatus.BAD_REQUEST,
+          errors: {
+            facebookAccount:
+              'this facebook account already connect to another account',
+          },
+        });
+      }
+    });
+
+    it('should connect to email account', async () => {
+      const user = createUserDoc({
+        facebook: { id: 'facebook-id', email: 'test@gmail.com' },
+      });
+
+      const spyUserServiceFindOne = jest
+        .spyOn(userService, 'findOne')
+        .mockResolvedValueOnce({ ...user, facebook: null } as User)
+        .mockResolvedValueOnce(undefined);
+
+      const spyAuthFacebookServiceVerify = jest
+        .spyOn(authFacebookService, 'verify')
+        .mockResolvedValueOnce({
+          name: user.name,
+          ...user.facebook,
+        } as FacebookAccountInfo);
+
+      const spyUserServiceFindOneAndUpdate = jest
+        .spyOn(userService, 'findOneAndUpdate')
+        .mockResolvedValueOnce(user as User);
+
+      const result = await service.connectFacebook(
+        user._id,
+        'valid-facebook-access-token',
+      );
+
+      expect(result).toEqual({
+        data: null,
+        message: 'connect facebook account success',
+      });
+      expect(spyUserServiceFindOne).toHaveBeenNthCalledWith(1, { _id: '1' });
+      expect(spyAuthFacebookServiceVerify).toBeCalledWith(
+        'valid-facebook-access-token',
+      );
+      expect(spyUserServiceFindOne).toHaveBeenNthCalledWith(2, {
+        'facebook.id': user.facebook.id,
+      });
+      expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
+        { _id: user._id },
+        { facebook: user.facebook },
       );
     });
   });

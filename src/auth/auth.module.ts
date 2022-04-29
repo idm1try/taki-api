@@ -10,6 +10,7 @@ import { AuthService } from './auth.service';
 import { KeysModule } from '../keys/keys.module';
 import { MailModule } from '../mail/mail.module';
 import { AuthGoogleModule } from '../auth-google/auth-google.module';
+import { AuthFacebookModule } from '../auth-facebook/auth-facebook.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { AuthGoogleModule } from '../auth-google/auth-google.module';
     KeysModule,
     MailModule,
     AuthGoogleModule,
+    AuthFacebookModule,
   ],
   providers: [AuthService, JwtAccessStrategy, JwtRefreshStrategy],
   controllers: [AuthController],

@@ -13,6 +13,7 @@ import { DeleteAccountDto } from './dtos/delete-account.dto';
 import { KeysService } from '../keys/keys.service';
 import { UpdateAccountDto } from './dtos/update-account.dto';
 import { AuthGoogleService } from '../auth-google/auth-google.service';
+import { AuthFacebookService } from '../auth-facebook/auth-facebook.service';
 
 @Injectable()
 export class AuthService {
@@ -23,6 +24,7 @@ export class AuthService {
     private readonly mailService: MailService,
     private readonly keysService: KeysService,
     private readonly authGoogleService: AuthGoogleService,
+    private readonly authFacebookService: AuthFacebookService,
   ) {}
 
   public async generateTokens(payload: Payload): Promise<Tokens> {
@@ -457,5 +459,103 @@ export class AuthService {
     );
 
     return APIResponse.Success(null, 'connect google account success');
+  }
+
+  public async facebookSignIn(
+    facebookAccessToken: string,
+  ): Promise<IAPIResponse<Tokens>> {
+    const facebookUserInfo = await this.authFacebookService.verify(
+      facebookAccessToken,
+    );
+    if (!facebookUserInfo) {
+      throw APIResponse.Error(HttpStatus.BAD_REQUEST, {
+        facebookAccessToken: 'facebook accessToken invalid',
+      });
+    }
+
+    const user = await this.usersService.findOne({
+      'facebook.id': facebookUserInfo.id,
+    });
+
+    // If not exist account create one
+    if (!user) {
+      const newUser = await this.usersService.create({
+        name: facebookUserInfo.name,
+        facebook: {
+          id: facebookUserInfo.id,
+          email: facebookUserInfo.email,
+        },
+      });
+
+      const tokens = await this.generateTokens({
+        userId: newUser._id,
+      });
+
+      await this.usersService.findOneAndUpdate(
+        { _id: newUser._id },
+        {
+          refreshToken: tokens.refreshToken,
+        },
+      );
+
+      // Only send email notification when signin first time
+      await this.mailService.signupSuccess(
+        newUser.facebook.email,
+        newUser.name,
+      );
+
+      return APIResponse.Success(
+        tokens,
+        'signin with facebook for new user success',
+      );
+    }
+
+    const tokens = await this.generateTokens({
+      userId: user._id,
+    });
+
+    await this.usersService.findOneAndUpdate(
+      { _id: user._id },
+      {
+        refreshToken: tokens.refreshToken,
+      },
+    );
+
+    return APIResponse.Success(tokens, 'signin with facebook success');
+  }
+
+  public async connectFacebook(userId: string, facebookAccessToken: string) {
+    const user = await this.usersService.findOne({ _id: userId });
+    if (user?.facebook?.id) {
+      throw APIResponse.Error(HttpStatus.CONFLICT, {
+        facebookId: 'your account already connect with facebook',
+      });
+    }
+
+    const facebookUserInfo = await this.authFacebookService.verify(
+      facebookAccessToken,
+    );
+    if (!facebookUserInfo) {
+      throw APIResponse.Error(HttpStatus.BAD_REQUEST, {
+        facebookAccessToken: 'facebook accessToken invalid',
+      });
+    }
+
+    const isConnectedToAnotherAccount = await this.usersService.findOne({
+      'facebook.id': facebookUserInfo.id,
+    });
+    if (isConnectedToAnotherAccount) {
+      throw APIResponse.Error(HttpStatus.BAD_REQUEST, {
+        facebookAccount:
+          'this facebook account already connect to another account',
+      });
+    }
+
+    await this.usersService.findOneAndUpdate(
+      { _id: userId },
+      { facebook: { id: facebookUserInfo.id, email: facebookUserInfo.email } },
+    );
+
+    return APIResponse.Success(null, 'connect facebook account success');
   }
 }

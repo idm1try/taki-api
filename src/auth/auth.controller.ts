@@ -24,6 +24,7 @@ import { UpdatePasswordDto } from './dtos/update-password.dto';
 import { DeleteAccountDto } from './dtos/delete-account.dto';
 import { UpdateAccountDto } from './dtos/update-account.dto';
 import { GoogleDto } from './dtos/google.dto';
+import { FacebookDto } from './dtos/facebook.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -225,6 +226,41 @@ export class AuthController {
     return this.authService.connectGoogle(
       req.user.userId,
       googleDto.accessToken,
+    );
+  }
+
+  @Post('facebook')
+  @ApiOkResponse({
+    type: ResponseSuccess,
+    description: 'Signin with facebook success, return new tokens',
+  })
+  @ApiConflictResponse({
+    type: ResponseError,
+    description: 'Signin with facebook failed, return errors',
+  })
+  @HttpCode(HttpStatus.OK)
+  facebookSignIn(@Body() facebookDto: FacebookDto) {
+    return this.authService.facebookSignIn(facebookDto.accessToken);
+  }
+
+  @Put('connect-facebook')
+  @ApiOkResponse({
+    type: ResponseSuccess,
+    description: 'connect facebook account success, return user info',
+  })
+  @ApiConflictResponse({
+    type: ResponseError,
+    description: 'connect facebook account failed, return errors',
+  })
+  @UseGuards(JwtAccessGuard)
+  @HttpCode(HttpStatus.OK)
+  connectFacebook(
+    @Req() req: RequestWithParsedPayload,
+    @Body() facebookDto: FacebookDto,
+  ) {
+    return this.authService.connectFacebook(
+      req.user.userId,
+      facebookDto.accessToken,
     );
   }
 }
