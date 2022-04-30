@@ -7,12 +7,13 @@ import {
   UpdateQuery,
 } from 'mongoose';
 import { plainToInstance } from 'class-transformer';
-import { User } from './users.schema';
-import { UserProfileSerialization } from './serializations/user-profile.serialization';
+import { User } from './user.schema';
+import { UserProfileSerialization } from './serialization/user-profile.serialization';
 
 @Injectable()
-export class UsersService {
+export class UserService {
   constructor(@InjectModel(User.name) private userModel: Model<User>) {}
+
   public async create(user: SchemaDefinitionType<User>): Promise<User> {
     return this.userModel.create(user);
   }

@@ -2,8 +2,8 @@ import { createMock } from '@golevelup/ts-jest';
 import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Model, Query } from 'mongoose';
-import { Key } from './keys.schema';
-import { KeysService } from './keys.service';
+import { Key } from './key.schema';
+import { KeyService } from './key.service';
 
 const mockForgotDoc = (override: Partial<Key> = {}): Partial<Key> => ({
   _id: '1',
@@ -12,13 +12,13 @@ const mockForgotDoc = (override: Partial<Key> = {}): Partial<Key> => ({
 });
 
 describe('KeysService', () => {
-  let service: KeysService;
+  let service: KeyService;
   let model: Model<Key>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        KeysService,
+        KeyService,
         {
           provide: getModelToken(Key.name),
           useValue: Model,
@@ -26,7 +26,7 @@ describe('KeysService', () => {
       ],
     }).compile();
 
-    service = module.get<KeysService>(KeysService);
+    service = module.get<KeyService>(KeyService);
     model = module.get<Model<Key>>(getModelToken(Key.name));
   });
 

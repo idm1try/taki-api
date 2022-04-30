@@ -1,6 +1,6 @@
 import { plainToInstance } from 'class-transformer';
 import { Types } from 'mongoose';
-import { User } from '../users.schema';
+import { User } from '../user.schema';
 import { UserProfileSerialization } from './user-profile.serialization';
 
 describe('user-profile.serialization', () => {

@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Key } from './keys.schema';
+import { Key } from './key.schema';
 
 @Injectable()
-export class KeysService {
+export class KeyService {
   constructor(@InjectModel(Key.name) private keyModel: Model<Key>) {}
 
   public async create(userId: string): Promise<Key> {

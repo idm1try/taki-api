@@ -9,29 +9,29 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UsersService } from '../users/users.service';
+import { UserService } from '../user/user.service';
 import { AccountType, Payload, Tokens } from './auth.type';
-import { SignupDto } from './dtos/signup.dto';
+import { SignupDto } from './dto/signup.dto';
 import { MailService } from '../mail/mail.service';
-import { SigninEmailDto } from './dtos/signin-email.dto';
+import { SigninEmailDto } from './dto/signin-email.dto';
 import { Hashing } from '../utils';
-import { UserProfileSerialization } from '../users/serializations/user-profile.serialization';
-import { DeleteAccountDto } from './dtos/delete-account.dto';
-import { KeysService } from '../keys/keys.service';
-import { UpdateAccountDto } from './dtos/update-account.dto';
+import { UserProfileSerialization } from '../user/serialization/user-profile.serialization';
+import { DeleteAccountDto } from './dto/delete-account.dto';
+import { KeyService } from '../key/key.service';
+import { UpdateAccountDto } from './dto/update-account.dto';
 import { AuthGoogleService } from '../auth-google/auth-google.service';
 import { AuthFacebookService } from '../auth-facebook/auth-facebook.service';
-import { User } from '../users/users.schema';
+import { User } from '../user/user.schema';
 import { APIResponse } from '../helpers';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly configService: ConfigService,
-    private readonly usersService: UsersService,
+    private readonly userService: UserService,
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
-    private readonly keysService: KeysService,
+    private readonly keyService: KeyService,
     private readonly authGoogleService: AuthGoogleService,
     private readonly authFacebookService: AuthFacebookService,
   ) {}
@@ -52,7 +52,7 @@ export class AuthService {
   }
 
   public async signup(signupDto: SignupDto): APIResponse<Tokens> {
-    const foundUsers = await this.usersService.findOne({
+    const foundUsers = await this.userService.findOne({
       email: signupDto.email,
     });
 
@@ -60,13 +60,13 @@ export class AuthService {
       throw new ConflictException('Email is already used');
     }
 
-    const user = await this.usersService.create(signupDto);
+    const user = await this.userService.create(signupDto);
 
     const tokens = await this.generateTokens({
       userId: user._id,
     });
 
-    await this.usersService.findOneAndUpdate(
+    await this.userService.findOneAndUpdate(
       { _id: user._id },
       {
         refreshToken: tokens.refreshToken,
@@ -79,7 +79,7 @@ export class AuthService {
   }
 
   public async signin(signinEmailDto: SigninEmailDto): APIResponse<Tokens> {
-    const user = await this.usersService.findOne({
+    const user = await this.userService.findOne({
       email: signinEmailDto.email,
     });
 
@@ -100,7 +100,7 @@ export class AuthService {
       userId: user?._id,
     });
 
-    await this.usersService.findOneAndUpdate(
+    await this.userService.findOneAndUpdate(
       { _id: user._id },
       {
         refreshToken: tokens.refreshToken,
@@ -114,7 +114,7 @@ export class AuthService {
     userId: string,
     refreshToken: string,
   ): APIResponse<Tokens> {
-    const user = await this.usersService.findOne({ _id: userId });
+    const user = await this.userService.findOne({ _id: userId });
     if (!user || !user.refreshToken) {
       throw new UnauthorizedException('Access denied');
     }
@@ -132,7 +132,7 @@ export class AuthService {
       userId: user._id,
     });
 
-    await this.usersService.findOneAndUpdate(
+    await this.userService.findOneAndUpdate(
       { _id: user._id },
       {
         refreshToken: tokens.refreshToken,
@@ -145,7 +145,7 @@ export class AuthService {
   public async accountInfo(
     userId: string,
   ): APIResponse<UserProfileSerialization> {
-    const user = await this.usersService.getUserInfo(userId);
+    const user = await this.userService.getUserInfo(userId);
 
     if (!user) {
       throw new ForbiddenException('Invalid accessToken');
@@ -159,14 +159,14 @@ export class AuthService {
     password: string,
     newPassword: string,
   ): APIResponse<void> {
-    const user = await this.usersService.findOne({ _id: userId });
+    const user = await this.userService.findOne({ _id: userId });
     const isMatchedPassword = await Hashing.verify(user.password, password);
 
     if (!isMatchedPassword) {
       throw new NotAcceptableException('Current password is not match');
     }
 
-    await this.usersService.findOneAndUpdate(
+    await this.userService.findOneAndUpdate(
       { _id: userId },
       {
         password: newPassword,
@@ -181,7 +181,7 @@ export class AuthService {
     userId: string,
     deleteAccountDto: DeleteAccountDto,
   ): APIResponse<void> {
-    const user = await this.usersService.findOne({ _id: userId });
+    const user = await this.userService.findOne({ _id: userId });
     if (!user) {
       throw new NotFoundException('User is not exist');
     }
@@ -194,7 +194,7 @@ export class AuthService {
       throw new ForbiddenException('Password does not match');
     }
 
-    const deletedAccount = await this.usersService.delete(userId);
+    const deletedAccount = await this.userService.delete(userId);
     await this.mailService.deleteAccountSuccess(
       deletedAccount.email,
       deletedAccount.name,
@@ -202,7 +202,7 @@ export class AuthService {
   }
 
   public async verifyEmail(userId: string): APIResponse<void> {
-    const user = await this.usersService.findOne({ _id: userId });
+    const user = await this.userService.findOne({ _id: userId });
     if (!user) {
       throw new NotFoundException('User is not exist');
     }
@@ -214,17 +214,17 @@ export class AuthService {
       throw new ConflictException('User is already verify');
     }
 
-    const verifyKey = await this.keysService.create(user._id);
+    const verifyKey = await this.keyService.create(user._id);
     await this.mailService.verifyEmail(user.email, verifyKey.key, user.name);
   }
 
   public async confirmVerifyEmail(key: string): APIResponse<void> {
-    const verifyKey = await this.keysService.verify(key);
+    const verifyKey = await this.keyService.verify(key);
     if (!verifyKey) {
       throw new NotAcceptableException('verifyKey is expired or invalid');
     }
 
-    const user = await this.usersService.findOneAndUpdate(
+    const user = await this.userService.findOneAndUpdate(
       { _id: verifyKey.user._id },
       { isVerify: true },
     );
@@ -232,12 +232,12 @@ export class AuthService {
     if (!user) {
       throw new NotAcceptableException('verifyKey is expired or invalid');
     }
-    await this.keysService.revoke(key);
+    await this.keyService.revoke(key);
     await this.mailService.verifyEmailSuccess(user.email, user.name);
   }
 
   public async signout(userId: string): APIResponse<void> {
-    const user = await this.usersService.findOneAndUpdate(
+    const user = await this.userService.findOneAndUpdate(
       { _id: userId, refreshToken: { $exists: true, $ne: null } },
       { refreshToken: null },
     );
@@ -248,7 +248,7 @@ export class AuthService {
   }
 
   public async forgotPassword(email: string): APIResponse<void> {
-    const user = await this.usersService.findOne({ email });
+    const user = await this.userService.findOne({ email });
 
     if (!user) {
       throw new NotFoundException('Email is not exist');
@@ -259,7 +259,7 @@ export class AuthService {
     }
 
     try {
-      const forgotPassword = await this.keysService.create(user._id);
+      const forgotPassword = await this.keyService.create(user._id);
       await this.mailService.forgotPassword(
         user.email,
         forgotPassword.key,
@@ -274,14 +274,14 @@ export class AuthService {
     forgotPasswordKey: string,
     newPassword: string,
   ): APIResponse<void> {
-    const forgotPassword = await this.keysService.verify(forgotPasswordKey);
+    const forgotPassword = await this.keyService.verify(forgotPasswordKey);
     if (!forgotPassword) {
       throw new NotAcceptableException(
         'forgotPasswordKey is expired or invalid',
       );
     }
 
-    const user = await this.usersService.findOneAndUpdate(
+    const user = await this.userService.findOneAndUpdate(
       { _id: forgotPassword.user._id },
       { password: newPassword, refreshToken: null },
     );
@@ -292,7 +292,7 @@ export class AuthService {
       );
     }
 
-    await this.keysService.revoke(forgotPasswordKey);
+    await this.keyService.revoke(forgotPasswordKey);
     await this.mailService.resetPasswordSuccess(user.email, user.name);
   }
 
@@ -304,7 +304,7 @@ export class AuthService {
       throw new NotAcceptableException('Nothing new to update');
     }
     if (updateAccountInfoDto.email) {
-      const user = await this.usersService.findOne({
+      const user = await this.userService.findOne({
         email: updateAccountInfoDto.email,
       });
 
@@ -319,7 +319,7 @@ export class AuthService {
       }
     }
 
-    await this.usersService.findOneAndUpdate(
+    await this.userService.findOneAndUpdate(
       { _id: userId },
       updateAccountInfoDto,
     );
@@ -333,13 +333,13 @@ export class AuthService {
       throw new BadRequestException('Google accessToken invalid');
     }
 
-    const user = await this.usersService.findOne({
+    const user = await this.userService.findOne({
       'google.id': googleUserInfo.id,
     });
 
     // If not exist account create one
     if (!user) {
-      const newUser = await this.usersService.create({
+      const newUser = await this.userService.create({
         name: googleUserInfo.name,
         google: {
           id: googleUserInfo.id,
@@ -351,7 +351,7 @@ export class AuthService {
         userId: newUser._id,
       });
 
-      await this.usersService.findOneAndUpdate(
+      await this.userService.findOneAndUpdate(
         { _id: newUser._id },
         {
           refreshToken: tokens.refreshToken,
@@ -368,7 +368,7 @@ export class AuthService {
       userId: user._id,
     });
 
-    await this.usersService.findOneAndUpdate(
+    await this.userService.findOneAndUpdate(
       { _id: user._id },
       {
         refreshToken: tokens.refreshToken,
@@ -382,7 +382,7 @@ export class AuthService {
     userId: string,
     googleAccessToken: string,
   ): APIResponse<void> {
-    const user = await this.usersService.findOne({ _id: userId });
+    const user = await this.userService.findOne({ _id: userId });
     if (user?.google?.id) {
       throw new ConflictException('Your account already connect with Google');
     }
@@ -395,7 +395,7 @@ export class AuthService {
       throw new BadRequestException('Google accessToken invalid');
     }
 
-    const isConnectedToAnotherAccount = await this.usersService.findOne({
+    const isConnectedToAnotherAccount = await this.userService.findOne({
       'google.id': googleUserInfo.id,
     });
     if (isConnectedToAnotherAccount) {
@@ -404,7 +404,7 @@ export class AuthService {
       );
     }
 
-    await this.usersService.findOneAndUpdate(
+    await this.userService.findOneAndUpdate(
       { _id: userId },
       { google: { id: googleUserInfo.id, email: googleUserInfo.email } },
     );
@@ -420,13 +420,13 @@ export class AuthService {
       throw new BadRequestException('Facebook accessToken invalid');
     }
 
-    const user = await this.usersService.findOne({
+    const user = await this.userService.findOne({
       'facebook.id': facebookUserInfo.id,
     });
 
     // If not exist account create one
     if (!user) {
-      const newUser = await this.usersService.create({
+      const newUser = await this.userService.create({
         name: facebookUserInfo.name,
         facebook: {
           id: facebookUserInfo.id,
@@ -438,7 +438,7 @@ export class AuthService {
         userId: newUser._id,
       });
 
-      await this.usersService.findOneAndUpdate(
+      await this.userService.findOneAndUpdate(
         { _id: newUser._id },
         {
           refreshToken: tokens.refreshToken,
@@ -458,7 +458,7 @@ export class AuthService {
       userId: user._id,
     });
 
-    await this.usersService.findOneAndUpdate(
+    await this.userService.findOneAndUpdate(
       { _id: user._id },
       {
         refreshToken: tokens.refreshToken,
@@ -472,7 +472,7 @@ export class AuthService {
     userId: string,
     facebookAccessToken: string,
   ): APIResponse<void> {
-    const user = await this.usersService.findOne({ _id: userId });
+    const user = await this.userService.findOne({ _id: userId });
     if (user?.facebook?.id) {
       throw new ConflictException('Your account already connect with Facebook');
     }
@@ -484,7 +484,7 @@ export class AuthService {
       throw new BadRequestException('Facebook accessToken invalid');
     }
 
-    const isConnectedToAnotherAccount = await this.usersService.findOne({
+    const isConnectedToAnotherAccount = await this.userService.findOne({
       'facebook.id': facebookUserInfo.id,
     });
     if (isConnectedToAnotherAccount) {
@@ -493,7 +493,7 @@ export class AuthService {
       );
     }
 
-    await this.usersService.findOneAndUpdate(
+    await this.userService.findOneAndUpdate(
       { _id: userId },
       { facebook: { id: facebookUserInfo.id, email: facebookUserInfo.email } },
     );
@@ -503,12 +503,12 @@ export class AuthService {
     userId: string,
     connectEmailDto: SigninEmailDto,
   ): APIResponse<void> {
-    const user = await this.usersService.findOne({ _id: userId });
+    const user = await this.userService.findOne({ _id: userId });
     if (user?.email) {
       throw new ConflictException('Your account already connect with email');
     }
 
-    const userUsingThisEmail = await this.usersService.findOne({
+    const userUsingThisEmail = await this.userService.findOne({
       email: connectEmailDto.email,
     });
     if (userUsingThisEmail) {
@@ -517,7 +517,7 @@ export class AuthService {
       );
     }
 
-    await this.usersService.findOneAndUpdate(
+    await this.userService.findOneAndUpdate(
       { _id: userId },
       { email: connectEmailDto.email, password: connectEmailDto.password },
     );
@@ -532,7 +532,7 @@ export class AuthService {
   }
 
   public async unlinkAccount(userId: string, accountType: AccountType) {
-    const user = await this.usersService.findOne({ _id: userId });
+    const user = await this.userService.findOne({ _id: userId });
     const numSigninMethods = this.countAuthMethods(user);
     if (numSigninMethods < 2) {
       throw new NotAcceptableException('Account need atleast 1 sign method');
@@ -540,19 +540,19 @@ export class AuthService {
 
     switch (accountType) {
       case AccountType.Google:
-        this.usersService.findOneAndUpdate(
+        this.userService.findOneAndUpdate(
           { _id: userId },
           { $unset: { google: '' } },
         );
         break;
       case AccountType.Facebook:
-        this.usersService.findOneAndUpdate(
+        this.userService.findOneAndUpdate(
           { _id: userId },
           { $unset: { facebook: '' } },
         );
         break;
       default:
-        this.usersService.findOneAndUpdate(
+        this.userService.findOneAndUpdate(
           { _id: userId },
           { $unset: { email: '', password: '', isVerify: '' } },
         );
