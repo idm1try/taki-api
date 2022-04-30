@@ -2,15 +2,15 @@ import { HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
-import { User } from '../users/users.schema';
-import { UsersService } from '../users/users.service';
+import { User } from '../user/user.schema';
+import { UserService } from '../user/user.service';
 import { AuthService } from './auth.service';
-import { KeysService } from '../keys/keys.service';
+import { KeyService } from '../key/key.service';
 import { MailService } from '../mail/mail.service';
 import { createMockFromClass } from '../../test/utils/createMockFromClass';
 import { Hashing } from '../utils';
-import { UserProfileSerialization } from '../users/serializations/user-profile.serialization';
-import { Key } from '../keys/keys.schema';
+import { UserProfileSerialization } from '../user/serialization/user-profile.serialization';
+import { Key } from '../key/key.schema';
 import { AuthGoogleService } from '../auth-google/auth-google.service';
 import { AuthFacebookService } from '../auth-facebook/auth-facebook.service';
 import { FacebookAccountInfo } from '../auth-facebook/auth-facebook.type';
@@ -27,9 +27,9 @@ describe('AuthService', () => {
   let service: AuthService;
   let jwtService: JwtService;
   let configService: ConfigService;
-  let userService: UsersService;
+  let userService: UserService;
   let mailService: MailService;
-  let keysService: KeysService;
+  let keyService: KeyService;
   let authGoogleService: AuthGoogleService;
   let authFacebookService: AuthFacebookService;
 
@@ -38,8 +38,8 @@ describe('AuthService', () => {
       providers: [
         AuthService,
         {
-          provide: UsersService,
-          useValue: createMockFromClass(UsersService),
+          provide: UserService,
+          useValue: createMockFromClass(UserService),
         },
         {
           provide: ConfigService,
@@ -50,8 +50,8 @@ describe('AuthService', () => {
           useValue: createMockFromClass(JwtService),
         },
         {
-          provide: KeysService,
-          useValue: createMockFromClass(KeysService),
+          provide: KeyService,
+          useValue: createMockFromClass(KeyService),
         },
         {
           provide: MailService,
@@ -69,11 +69,11 @@ describe('AuthService', () => {
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    userService = module.get<UsersService>(UsersService);
+    userService = module.get<UserService>(UserService);
     jwtService = module.get<JwtService>(JwtService);
     configService = module.get<ConfigService>(ConfigService);
     mailService = module.get<MailService>(MailService);
-    keysService = module.get<KeysService>(KeysService);
+    keyService = module.get<KeyService>(KeyService);
     authGoogleService = module.get<AuthGoogleService>(AuthGoogleService);
     authFacebookService = module.get<AuthFacebookService>(AuthFacebookService);
   });
@@ -583,7 +583,7 @@ describe('AuthService', () => {
         .mockResolvedValueOnce(user as User);
 
       const spyKeyServiceCreate = jest
-        .spyOn(keysService, 'create')
+        .spyOn(keyService, 'create')
         .mockResolvedValueOnce({
           id: '2',
           key: 'verify-key',
@@ -606,7 +606,7 @@ describe('AuthService', () => {
 
   describe('confirmVerifyEmail', () => {
     it('should throw error when verifyKey expired or invalid', async () => {
-      jest.spyOn(keysService, 'verify').mockResolvedValueOnce(undefined);
+      jest.spyOn(keyService, 'verify').mockResolvedValueOnce(undefined);
 
       try {
         await service.confirmVerifyEmail('invalid-key');
@@ -618,8 +618,8 @@ describe('AuthService', () => {
 
     it('should send email and response status', async () => {
       const user = createUserDoc({ email: 'test@gmail.com', isVerify: false });
-      const spyKeysServiceVerify = jest
-        .spyOn(keysService, 'verify')
+      const spyKeyServiceVerify = jest
+        .spyOn(keyService, 'verify')
         .mockResolvedValueOnce({
           _id: '1',
           key: 'valid-key',
@@ -634,7 +634,7 @@ describe('AuthService', () => {
       );
 
       await service.confirmVerifyEmail('valid-key');
-      expect(spyKeysServiceVerify).toBeCalledWith('valid-key');
+      expect(spyKeyServiceVerify).toBeCalledWith('valid-key');
       expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
         { _id: user._id },
         { isVerify: true },
@@ -704,7 +704,7 @@ describe('AuthService', () => {
       jest.spyOn(userService, 'findOne').mockResolvedValueOnce(user as User);
 
       jest
-        .spyOn(keysService, 'create')
+        .spyOn(keyService, 'create')
         .mockRejectedValueOnce(new Error('duplicate'));
 
       try {
@@ -724,7 +724,7 @@ describe('AuthService', () => {
       const spyMailForgotPassword = jest.spyOn(mailService, 'forgotPassword');
 
       const spyForgotCreate = jest
-        .spyOn(keysService, 'create')
+        .spyOn(keyService, 'create')
         .mockResolvedValueOnce({ key: 'reset-key', user: user } as Key);
 
       await service.forgotPassword(user.email);
@@ -741,7 +741,7 @@ describe('AuthService', () => {
 
   describe('resetPassword', () => {
     it('should throw error when forgotPasswordKey is expired or invalid', async () => {
-      jest.spyOn(keysService, 'verify').mockResolvedValueOnce(undefined);
+      jest.spyOn(keyService, 'verify').mockResolvedValueOnce(undefined);
 
       try {
         await service.resetPassword('invalid-key', 'new-password');
@@ -755,7 +755,7 @@ describe('AuthService', () => {
 
     it('should throw error when user info in forgotPasswordKey not exist', async () => {
       const user = createUserDoc({ email: 'test@gmail.com', isVerify: true });
-      jest.spyOn(keysService, 'verify').mockResolvedValueOnce({
+      jest.spyOn(keyService, 'verify').mockResolvedValueOnce({
         key: 'valid-key',
         user,
       } as Key);
@@ -777,7 +777,7 @@ describe('AuthService', () => {
     it('should clean refreshToken and update new password and send email notification', async () => {
       const user = createUserDoc({ email: 'test@gmail.com', isVerify: true });
       const spyForgotVerify = jest
-        .spyOn(keysService, 'verify')
+        .spyOn(keyService, 'verify')
         .mockResolvedValueOnce({
           key: 'valid-key',
           user,
@@ -791,7 +791,7 @@ describe('AuthService', () => {
           refreshToken: null,
         } as User);
 
-      const spyForgotRevoke = jest.spyOn(keysService, 'revoke');
+      const spyForgotRevoke = jest.spyOn(keyService, 'revoke');
 
       const spyMailResetPasswordSuccess = jest.spyOn(
         mailService,

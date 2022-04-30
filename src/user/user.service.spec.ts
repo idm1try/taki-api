@@ -2,8 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Model, Query } from 'mongoose';
 import { getModelToken } from '@nestjs/mongoose';
 import { createMock } from '@golevelup/ts-jest';
-import { User } from './users.schema';
-import { UsersService } from './users.service';
+import { User } from './user.schema';
+import { UserService } from './user.service';
 
 const createUserDoc = (override: Partial<User> = {}): Partial<User> => ({
   _id: '1',
@@ -12,13 +12,13 @@ const createUserDoc = (override: Partial<User> = {}): Partial<User> => ({
 });
 
 describe('UsersService', () => {
-  let service: UsersService;
+  let service: UserService;
   let model: Model<User>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        UsersService,
+        UserService,
         {
           provide: getModelToken(User.name),
           useValue: Model,
@@ -26,7 +26,7 @@ describe('UsersService', () => {
       ],
     }).compile();
 
-    service = module.get<UsersService>(UsersService);
+    service = module.get<UserService>(UserService);
     model = module.get<Model<User>>(getModelToken(User.name));
   });
 

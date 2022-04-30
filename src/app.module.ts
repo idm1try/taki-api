@@ -2,15 +2,12 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { MailerModule } from '@nestjs-modules/mailer';
-import { MongooseConfigService } from './databases/mongoose.database';
-import { UsersModule } from './users/users.module';
-import { KeysModule } from './keys/keys.module';
-import appConfig from './configs/app.config';
-import mongoConfig from './configs/mongo.config';
-import mailConfig from './configs/mail.config';
-import authConfig from './configs/auth.config';
+import { MongooseConfigService } from './database/mongoose.database';
+import { UserModule } from './user/user.module';
+import { KeyModule } from './key/key.module';
 import { MailConfigService } from './mail/mail-config.service';
 import { AuthModule } from './auth/auth.module';
+import { appConfig, mongoConfig, authConfig, mailConfig } from './config';
 
 @Module({
   imports: [
@@ -25,9 +22,9 @@ import { AuthModule } from './auth/auth.module';
     MailerModule.forRootAsync({
       useClass: MailConfigService,
     }),
-    UsersModule,
+    UserModule,
     AuthModule,
-    KeysModule,
+    KeyModule,
   ],
   controllers: [],
   providers: [],

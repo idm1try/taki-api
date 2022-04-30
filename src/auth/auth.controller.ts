@@ -14,17 +14,19 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { SignupDto } from './dtos/signup.dto';
-import { SigninEmailDto } from './dtos/signin-email.dto';
-import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
+import { SignupDto } from './dto/signup.dto';
+import { SigninEmailDto } from './dto/signin-email.dto';
+import { JwtRefreshGuard } from './guard/jwt-refresh.guard';
 import { RequestWithParsedPayload } from './auth.type';
-import { JwtAccessGuard } from './guards/jwt-access.guard';
-import { UpdatePasswordDto } from './dtos/update-password.dto';
-import { DeleteAccountDto } from './dtos/delete-account.dto';
-import { UpdateAccountDto } from './dtos/update-account.dto';
-import { GoogleDto } from './dtos/google.dto';
-import { FacebookDto } from './dtos/facebook.dto';
-import { DisconnectAccountDto } from './dtos/disconnect-account.dto';
+import { JwtAccessGuard } from './guard/jwt-access.guard';
+import { UpdatePasswordDto } from './dto/update-password.dto';
+import { DeleteAccountDto } from './dto/delete-account.dto';
+import { UpdateAccountDto } from './dto/update-account.dto';
+import { GoogleDto } from './dto/google.dto';
+import { FacebookDto } from './dto/facebook.dto';
+import { DisconnectAccountDto } from './dto/disconnect-account.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -92,6 +94,24 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   confirmVerifyEmail(@Query('verifyKey') verifyKey: string) {
     return this.authService.confirmVerifyEmail(verifyKey);
+  }
+
+  @Put('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(forgotPasswordDto.email);
+  }
+
+  @Put('password')
+  @HttpCode(HttpStatus.OK)
+  resetPassword(
+    @Body() resetPasswordDto: ResetPasswordDto,
+    @Query('forgotPasswordKey ') forgotPasswordKey: string,
+  ) {
+    return this.authService.resetPassword(
+      forgotPasswordKey,
+      resetPasswordDto.password,
+    );
   }
 
   @Post('signout')
