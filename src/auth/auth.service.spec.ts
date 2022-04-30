@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -11,7 +11,6 @@ import { createMockFromClass } from '../../test/utils/createMockFromClass';
 import { Hashing } from '../utils';
 import { UserProfileSerialization } from '../users/serializations/user-profile.serialization';
 import { Key } from '../keys/keys.schema';
-import { APIResponse } from '../helpers';
 import { AuthGoogleService } from '../auth-google/auth-google.service';
 import { AuthFacebookService } from '../auth-facebook/auth-facebook.service';
 import { FacebookAccountInfo } from '../auth-facebook/auth-facebook.type';
@@ -144,13 +143,8 @@ describe('AuthService', () => {
           password: user.password,
         });
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.CONFLICT,
-          errors: {
-            email: 'email is already used',
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.CONFLICT);
+        expect(error.message).toEqual('Email is already used');
       }
     });
 
@@ -190,13 +184,7 @@ describe('AuthService', () => {
         password: user.password,
       });
 
-      expect(response).toEqual({
-        data: {
-          accessToken: 'at',
-          refreshToken: 'rt',
-        },
-        message: 'signup success',
-      });
+      expect(response).toEqual({ accessToken: 'at', refreshToken: 'rt' });
       expect(spyUserServiceFindOne).toBeCalledWith({
         email: user.email,
       });
@@ -246,14 +234,8 @@ describe('AuthService', () => {
           password: 'wrong',
         });
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-
-        expect(error.response).toEqual({
-          status: HttpStatus.BAD_REQUEST,
-          errors: {
-            email: 'email is not exist',
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.BAD_REQUEST);
+        expect(error.message).toEqual('Email is not exist');
       }
     });
 
@@ -274,13 +256,8 @@ describe('AuthService', () => {
           password: 'not-secret',
         });
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.BAD_REQUEST,
-          errors: {
-            password: 'incorect password',
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.BAD_REQUEST);
+        expect(error.message).toEqual('Incorrect password');
       }
     });
 
@@ -312,11 +289,8 @@ describe('AuthService', () => {
       });
 
       expect(response).toEqual({
-        data: {
-          accessToken: 'at',
-          refreshToken: 'rt',
-        },
-        message: 'signin success',
+        accessToken: 'at',
+        refreshToken: 'rt',
       });
       expect(spyUserServiceFindOne).toBeCalledWith({
         email: user.email,
@@ -337,13 +311,8 @@ describe('AuthService', () => {
       try {
         await service.refreshTokens('1', 'invalid-refresh-token');
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.UNAUTHORIZED,
-          errors: {
-            accessToken: 'access denied',
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.UNAUTHORIZED);
+        expect(error.message).toEqual('Access denied');
       }
     });
 
@@ -356,12 +325,8 @@ describe('AuthService', () => {
       try {
         await service.refreshTokens('1', 'invalid-refresh-token');
       } catch (error) {
-        expect(error.response).toEqual({
-          status: HttpStatus.UNAUTHORIZED,
-          errors: {
-            accessToken: 'invalid refreshToken',
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.UNAUTHORIZED);
+        expect(error.message).toEqual('Invalid refreshToken');
       }
     });
 
@@ -390,11 +355,8 @@ describe('AuthService', () => {
       const response = await service.refreshTokens(user._id, 'rt');
 
       expect(response).toEqual({
-        data: {
-          accessToken: 'new-at',
-          refreshToken: 'new-rt',
-        },
-        message: 'refresh new tokens success',
+        accessToken: 'new-at',
+        refreshToken: 'new-rt',
       });
       expect(spyUserServiceFindOne).toBeCalledWith({ _id: user._id });
       expect(spyJwtSign).toHaveBeenNthCalledWith(
@@ -433,13 +395,8 @@ describe('AuthService', () => {
       try {
         await service.accountInfo('not-exist-id');
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.FORBIDDEN,
-          errors: {
-            accessToken: 'invalid accessToken',
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.FORBIDDEN);
+        expect(error.message).toEqual('Invalid accessToken');
       }
     });
 
@@ -461,12 +418,9 @@ describe('AuthService', () => {
 
       const result = await service.accountInfo(user._id);
       expect(result).toEqual({
-        data: {
-          _id: user._id,
-          name: user.name,
-          email: user.email,
-        },
-        message: 'get account info success',
+        _id: user._id,
+        name: user.name,
+        email: user.email,
       });
       expect(spyUserServiceGetUserInfo).toBeCalledWith(user._id);
     });
@@ -501,16 +455,8 @@ describe('AuthService', () => {
         'updatePasswordSuccess',
       );
 
-      const response = await service.updatePassword(
-        user._id,
-        user.password,
-        'new-secret',
-      );
+      await service.updatePassword(user._id, user.password, 'new-secret');
 
-      expect(response).toEqual({
-        data: null,
-        message: 'update password success',
-      });
       expect(spyUserServiceFindOne).toBeCalledWith({ _id: '1' });
       expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
         { _id: user._id },
@@ -535,13 +481,8 @@ describe('AuthService', () => {
           password: 'secret',
         });
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.NOT_FOUND,
-          errors: {
-            user: 'user is not exist',
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.NOT_FOUND);
+        expect(error.message).toEqual('User is not exist');
       }
     });
 
@@ -561,13 +502,8 @@ describe('AuthService', () => {
           password: 'not-secret',
         });
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.FORBIDDEN,
-          errors: {
-            password: 'password does not match',
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.FORBIDDEN);
+        expect(error.message).toEqual('Password does not match');
       }
     });
 
@@ -593,11 +529,10 @@ describe('AuthService', () => {
         'deleteAccountSuccess',
       );
 
-      const response = await service.deleteAccount(user._id, {
+      await service.deleteAccount(user._id, {
         password: user.password,
       });
 
-      expect(response).toEqual({ data: null, message: 'account deleted' });
       expect(spyUserServiceFindOne).toBeCalledWith({ _id: user._id });
       expect(spyUserServiceDelete).toBeCalledWith(user._id);
       expect(spyMailDeleteAccountSuccess).toBeCalledWith(user.email, user.name);
@@ -611,13 +546,8 @@ describe('AuthService', () => {
       try {
         await service.verifyEmail('9');
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.NOT_FOUND,
-          errors: {
-            user: 'user is not exist',
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.NOT_FOUND);
+        expect(error.message).toEqual('User is not exist');
       }
     });
 
@@ -628,13 +558,8 @@ describe('AuthService', () => {
       try {
         await service.verifyEmail(user._id);
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.CONFLICT,
-          errors: {
-            user: 'account not had email to verify',
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.CONFLICT);
+        expect(error.message).toEqual('Account not had email to verify');
       }
     });
 
@@ -646,13 +571,8 @@ describe('AuthService', () => {
       try {
         await service.verifyEmail(user._id);
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.CONFLICT,
-          errors: {
-            user: 'user is already verify',
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.CONFLICT);
+        expect(error.message).toEqual('User is already verify');
       }
     });
 
@@ -672,11 +592,8 @@ describe('AuthService', () => {
 
       const spyMailVerifyEmail = jest.spyOn(mailService, 'verifyEmail');
 
-      const response = await service.verifyEmail(user._id);
-      expect(response).toEqual({
-        data: null,
-        message: 'verify account email is sent',
-      });
+      await service.verifyEmail(user._id);
+
       expect(spyUserServiceFindOne).toBeCalledWith({ _id: user._id });
       expect(spyKeyServiceCreate).toBeCalledWith(user._id);
       expect(spyMailVerifyEmail).toBeCalledWith(
@@ -694,13 +611,8 @@ describe('AuthService', () => {
       try {
         await service.confirmVerifyEmail('invalid-key');
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.NOT_ACCEPTABLE,
-          errors: {
-            verifyKey: 'verifyKey is expired or invalid',
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
+        expect(error.message).toEqual('verifyKey is expired or invalid');
       }
     });
 
@@ -721,8 +633,7 @@ describe('AuthService', () => {
         'verifyEmailSuccess',
       );
 
-      const response = await service.confirmVerifyEmail('valid-key');
-      expect(response).toEqual({ data: null, message: 'verify email success' });
+      await service.confirmVerifyEmail('valid-key');
       expect(spyKeysServiceVerify).toBeCalledWith('valid-key');
       expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
         { _id: user._id },
@@ -741,13 +652,8 @@ describe('AuthService', () => {
       try {
         await service.signout('9');
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.FORBIDDEN,
-          errors: {
-            accessToken: 'invalid accessToken',
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.UNAUTHORIZED);
+        expect(error.message).toEqual('Invalid accessToken');
       }
     });
 
@@ -758,9 +664,8 @@ describe('AuthService', () => {
         .spyOn(userService, 'findOneAndUpdate')
         .mockResolvedValueOnce(createUserDoc({ refreshToken: null }) as User);
 
-      const response = await service.signout(user._id);
+      await service.signout(user._id);
 
-      expect(response).toEqual({ data: null, message: 'signout success' });
       expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
         { _id: user._id, refreshToken: { $exists: true, $ne: null } },
         { refreshToken: null },
@@ -776,13 +681,8 @@ describe('AuthService', () => {
       try {
         await service.forgotPassword(invalidEmail);
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.NOT_FOUND,
-          errors: {
-            email: `${invalidEmail} is not exist`,
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.NOT_FOUND);
+        expect(error.message).toEqual('Email is not exist');
       }
     });
 
@@ -794,38 +694,8 @@ describe('AuthService', () => {
       try {
         await service.forgotPassword(user.email);
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.NOT_ACCEPTABLE,
-          errors: {
-            email: `${user.email} is not verified`,
-          },
-        });
-      }
-    });
-
-    it('should throw error when email server down', async () => {
-      const user = createUserDoc({ email: 'test@gmail.com', isVerify: true });
-      jest.spyOn(userService, 'findOne').mockResolvedValueOnce(user as User);
-
-      jest
-        .spyOn(mailService, 'forgotPassword')
-        .mockRejectedValueOnce(new Error('email server down'));
-
-      jest
-        .spyOn(keysService, 'create')
-        .mockResolvedValueOnce({ key: 'reset-key', user: user } as Key);
-
-      try {
-        await service.forgotPassword(user.email);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.NOT_ACCEPTABLE,
-          errors: {
-            email: 'reset password email is already sent, try again later',
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
+        expect(error.message).toEqual('Email is not verified');
       }
     });
 
@@ -840,13 +710,8 @@ describe('AuthService', () => {
       try {
         await service.forgotPassword(user.email);
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.NOT_ACCEPTABLE,
-          errors: {
-            email: 'reset password email is already sent, try again later',
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
+        expect(error.message).toEqual('Reset password email is already sent');
       }
     });
 
@@ -862,12 +727,8 @@ describe('AuthService', () => {
         .spyOn(keysService, 'create')
         .mockResolvedValueOnce({ key: 'reset-key', user: user } as Key);
 
-      const response = await service.forgotPassword(user.email);
+      await service.forgotPassword(user.email);
 
-      expect(response).toEqual({
-        data: null,
-        message: 'reset password email is sent',
-      });
       expect(spyUserServiceFindOne).toBeCalledWith({ email: user.email });
       expect(spyMailForgotPassword).toBeCalledWith(
         user.email,
@@ -885,13 +746,10 @@ describe('AuthService', () => {
       try {
         await service.resetPassword('invalid-key', 'new-password');
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.NOT_ACCEPTABLE,
-          errors: {
-            forgotPasswordKey: 'forgotPasswordKey is expired or invalid',
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
+        expect(error.message).toEqual(
+          'forgotPasswordKey is expired or invalid',
+        );
       }
     });
 
@@ -909,13 +767,10 @@ describe('AuthService', () => {
       try {
         await service.resetPassword('valid-key', 'new-password');
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.NOT_ACCEPTABLE,
-          errors: {
-            forgotPasswordKey: 'forgotPasswordKey is expired or invalid',
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
+        expect(error.message).toEqual(
+          'forgotPasswordKey is expired or invalid',
+        );
       }
     });
 
@@ -943,12 +798,8 @@ describe('AuthService', () => {
         'resetPasswordSuccess',
       );
 
-      const response = await service.resetPassword('valid-key', 'new-password');
+      await service.resetPassword('valid-key', 'new-password');
 
-      expect(response).toEqual({
-        data: null,
-        message: 'update new password success',
-      });
       expect(spyForgotVerify).toBeCalledWith('valid-key');
       expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
         { _id: user._id },
@@ -964,13 +815,8 @@ describe('AuthService', () => {
       try {
         await service.updateAccountInfo('1', {});
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error).toEqual({
-          status: HttpStatus.NOT_ACCEPTABLE,
-          errors: {
-            account: 'nothing new to update',
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
+        expect(error.message).toEqual('Nothing new to update');
       }
     });
 
@@ -982,13 +828,8 @@ describe('AuthService', () => {
       try {
         await service.updateAccountInfo(user._id, { email: user.email });
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.NOT_ACCEPTABLE,
-          errors: {
-            email: `${user.email} same as your old email`,
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
+        expect(error.message).toEqual('New email is same as your old email');
       }
     });
 
@@ -1000,13 +841,10 @@ describe('AuthService', () => {
       try {
         await service.updateAccountInfo('1', { email: user.email });
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.CONFLICT,
-          errors: {
-            email: `${user.email} is being used by another account`,
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.CONFLICT);
+        expect(error.message).toEqual(
+          'New email is being used by another account',
+        );
       }
     });
 
@@ -1021,14 +859,11 @@ describe('AuthService', () => {
         .spyOn(userService, 'findOneAndUpdate')
         .mockResolvedValueOnce(user as User);
 
-      const response = await service.updateAccountInfo(user._id, {
+      await service.updateAccountInfo(user._id, {
         name: 'New Test Name',
         email: 'newtest@gmail.com',
       });
-      expect(response).toEqual({
-        data: null,
-        message: 'update account info success',
-      });
+
       expect(spyUserServiceFindOne).toBeCalledWith({
         email: 'newtest@gmail.com',
       });
@@ -1049,22 +884,13 @@ describe('AuthService', () => {
     });
 
     it('should throw error when google access token invalid', async () => {
-      jest.spyOn(authGoogleService, 'verify').mockRejectedValueOnce(
-        APIResponse.Error(HttpStatus.BAD_REQUEST, {
-          googleAccessToken: 'google accessToken invalid',
-        }),
-      );
+      jest.spyOn(authGoogleService, 'verify').mockResolvedValueOnce(undefined);
 
       try {
         await service.googleSignIn('invalid-google-access-token');
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.BAD_REQUEST,
-          errors: {
-            googleAccessToken: 'google accessToken invalid',
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.BAD_REQUEST);
+        expect(error.message).toEqual('Google accessToken invalid');
       }
     });
 
@@ -1098,8 +924,8 @@ describe('AuthService', () => {
       const response = await service.googleSignIn('valid-google-access-token');
 
       expect(response).toEqual({
-        data: { accessToken: 'at', refreshToken: 'rt' },
-        message: 'signin with google for new user success',
+        accessToken: 'at',
+        refreshToken: 'rt',
       });
 
       expect(spyAuthGoogleServiceVerify).toBeCalledWith(
@@ -1163,8 +989,8 @@ describe('AuthService', () => {
       const tokens = await service.googleSignIn('valid-google-access-token');
 
       expect(tokens).toEqual({
-        data: { accessToken: 'at', refreshToken: 'rt' },
-        message: 'signin with google success',
+        accessToken: 'at',
+        refreshToken: 'rt',
       });
 
       expect(spyAuthGoogleServiceVerify).toBeCalledWith(
@@ -1211,13 +1037,10 @@ describe('AuthService', () => {
       try {
         await service.connectGoogle(user._id, 'valid-google-access-token');
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.CONFLICT,
-          errors: {
-            googleId: 'your account already connect with google',
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.CONFLICT);
+        expect(error.message).toEqual(
+          'Your account already connect with Google',
+        );
       }
     });
 
@@ -1235,13 +1058,8 @@ describe('AuthService', () => {
       try {
         await service.connectGoogle(user._id, 'invalid-google-access-token');
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.BAD_REQUEST,
-          errors: {
-            googleAccessToken: 'google accessToken invalid',
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.BAD_REQUEST);
+        expect(error.message).toEqual('Google accessToken invalid');
       }
     });
 
@@ -1259,14 +1077,10 @@ describe('AuthService', () => {
       try {
         await service.connectGoogle(user._id, 'valid-google-access-token');
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.BAD_REQUEST,
-          errors: {
-            googleAccount:
-              'this google account already connect to another account',
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.BAD_REQUEST);
+        expect(error.message).toEqual(
+          'This Google account is being connected to another account',
+        );
       }
     });
 
@@ -1287,15 +1101,8 @@ describe('AuthService', () => {
         .spyOn(userService, 'findOneAndUpdate')
         .mockResolvedValueOnce(user as User);
 
-      const result = await service.connectGoogle(
-        user._id,
-        'valid-google-access-token',
-      );
+      await service.connectGoogle(user._id, 'valid-google-access-token');
 
-      expect(result).toEqual({
-        data: null,
-        message: 'connect google account success',
-      });
       expect(spyUserServiceFindOne).toHaveBeenNthCalledWith(1, {
         _id: user._id,
       });
@@ -1318,22 +1125,15 @@ describe('AuthService', () => {
     });
 
     it('should throw error when facebook access token invalid', async () => {
-      jest.spyOn(authFacebookService, 'verify').mockRejectedValueOnce(
-        APIResponse.Error(HttpStatus.BAD_REQUEST, {
-          facebookAccessToken: 'facebook accessToken invalid',
-        }),
-      );
+      jest
+        .spyOn(authFacebookService, 'verify')
+        .mockResolvedValueOnce(undefined);
 
       try {
         await service.facebookSignIn('invalid-facebook-access-token');
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.BAD_REQUEST,
-          errors: {
-            facebookAccessToken: 'facebook accessToken invalid',
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.BAD_REQUEST);
+        expect(error.message).toEqual('Facebook accessToken invalid');
       }
     });
 
@@ -1367,9 +1167,10 @@ describe('AuthService', () => {
       const response = await service.facebookSignIn(
         'valid-facebook-access-token',
       );
+
       expect(response).toEqual({
-        data: { accessToken: 'at', refreshToken: 'rt' },
-        message: 'signin with facebook for new user success',
+        accessToken: 'at',
+        refreshToken: 'rt',
       });
 
       expect(spyAuthFacebookServiceVerify).toBeCalledWith(
@@ -1437,8 +1238,8 @@ describe('AuthService', () => {
         'valid-facebook-access-token',
       );
       expect(response).toEqual({
-        data: { accessToken: 'at', refreshToken: 'rt' },
-        message: 'signin with facebook success',
+        accessToken: 'at',
+        refreshToken: 'rt',
       });
 
       expect(spyAuthFacebookServiceVerify).toBeCalledWith(
@@ -1485,13 +1286,10 @@ describe('AuthService', () => {
       try {
         await service.connectFacebook(user._id, 'valid-facebook-access-token');
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.CONFLICT,
-          errors: {
-            facebookId: 'your account already connect with facebook',
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.CONFLICT);
+        expect(error.message).toEqual(
+          'Your account already connect with Facebook',
+        );
       }
     });
 
@@ -1514,13 +1312,8 @@ describe('AuthService', () => {
           'invalid-facebook-access-token',
         );
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.BAD_REQUEST,
-          errors: {
-            facebookAccessToken: 'facebook accessToken invalid',
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.BAD_REQUEST);
+        expect(error.message).toEqual('Facebook accessToken invalid');
       }
     });
 
@@ -1538,14 +1331,10 @@ describe('AuthService', () => {
       try {
         await service.connectFacebook(user._id, 'valid-facebook-access-token');
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.BAD_REQUEST,
-          errors: {
-            facebookAccount:
-              'this facebook account already connect to another account',
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.BAD_REQUEST);
+        expect(error.message).toEqual(
+          'This Facebook account is being connected to another account',
+        );
       }
     });
 
@@ -1566,15 +1355,8 @@ describe('AuthService', () => {
         .spyOn(userService, 'findOneAndUpdate')
         .mockResolvedValueOnce(user as User);
 
-      const result = await service.connectFacebook(
-        user._id,
-        'valid-facebook-access-token',
-      );
+      await service.connectFacebook(user._id, 'valid-facebook-access-token');
 
-      expect(result).toEqual({
-        data: null,
-        message: 'connect facebook account success',
-      });
       expect(spyUserServiceFindOne).toHaveBeenNthCalledWith(1, { _id: '1' });
       expect(spyAuthFacebookServiceVerify).toBeCalledWith(
         'valid-facebook-access-token',
@@ -1601,13 +1383,10 @@ describe('AuthService', () => {
           password: user.password,
         });
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.CONFLICT,
-          errors: {
-            email: 'your account already connect with email',
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.CONFLICT);
+        expect(error.message).toEqual(
+          'Your account already connect with email',
+        );
       }
     });
 
@@ -1623,13 +1402,10 @@ describe('AuthService', () => {
           password: user.password,
         });
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.BAD_REQUEST,
-          errors: {
-            email: 'this email already connect to another account',
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.BAD_REQUEST);
+        expect(error.message).toEqual(
+          'This Email is being connected to another account',
+        );
       }
     });
 
@@ -1643,15 +1419,11 @@ describe('AuthService', () => {
         .spyOn(userService, 'findOneAndUpdate')
         .mockResolvedValueOnce({ ...user, password: 'hashed-secret' } as User);
 
-      const result = await service.connectEmail(user._id, {
+      await service.connectEmail(user._id, {
         email: user.email,
         password: user.password,
       });
 
-      expect(result).toEqual({
-        data: null,
-        message: 'connect email success',
-      });
       expect(spyUserServiceFindOne).toHaveBeenNthCalledWith(1, {
         _id: user._id,
       });
@@ -1674,13 +1446,8 @@ describe('AuthService', () => {
       try {
         await service.unlinkAccount('1', AccountType.Email);
       } catch (error) {
-        expect(error).toBeInstanceOf(HttpException);
-        expect(error.response).toEqual({
-          status: HttpStatus.BAD_REQUEST,
-          errors: {
-            auth: 'account need at least 1 signin method',
-          },
-        });
+        expect(error.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
+        expect(error.message).toEqual('Account need atleast 1 sign method');
       }
     });
 
@@ -1699,14 +1466,8 @@ describe('AuthService', () => {
         .spyOn(userService, 'findOneAndUpdate')
         .mockResolvedValueOnce({ ...user, google: null } as User);
 
-      const response = await service.unlinkAccount(
-        user._id,
-        AccountType.Google,
-      );
-      expect(response).toEqual({
-        data: null,
-        message: 'unlink google success',
-      });
+      await service.unlinkAccount(user._id, AccountType.Google);
+
       expect(spyUserServiceFindOne).toBeCalledWith({ _id: user._id });
       expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
         { _id: user._id },
@@ -1729,14 +1490,8 @@ describe('AuthService', () => {
         .spyOn(userService, 'findOneAndUpdate')
         .mockResolvedValueOnce({ ...user, facebook: null } as User);
 
-      const response = await service.unlinkAccount(
-        user._id,
-        AccountType.Facebook,
-      );
-      expect(response).toEqual({
-        data: null,
-        message: 'unlink facebook success',
-      });
+      await service.unlinkAccount(user._id, AccountType.Facebook);
+
       expect(spyUserServiceFindOne).toBeCalledWith({ _id: user._id });
       expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
         { _id: user._id },
@@ -1765,11 +1520,8 @@ describe('AuthService', () => {
           isVerify: false,
         } as User);
 
-      const response = await service.unlinkAccount(user._id, AccountType.Email);
-      expect(response).toEqual({
-        data: null,
-        message: 'unlink email success',
-      });
+      await service.unlinkAccount(user._id, AccountType.Email);
+
       expect(spyUserServiceFindOne).toBeCalledWith({ _id: user._id });
       expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
         { _id: user._id },

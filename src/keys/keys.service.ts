@@ -17,7 +17,7 @@ export class KeysService {
     return this.keyModel.findOne({ key }).exec();
   }
 
-  public async revoke(key: string): Promise<void> {
-    this.keyModel.findOneAndRemove({ key }).exec();
+  public async revoke(key: string): Promise<Key> {
+    return this.keyModel.findOneAndRemove({ key }).exec();
   }
 }
