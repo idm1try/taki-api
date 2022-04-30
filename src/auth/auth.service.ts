@@ -1,9 +1,16 @@
 import { ConfigService } from '@nestjs/config';
-import { HttpStatus, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotAcceptableException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { AccountType, Payload, Tokens } from './auth.type';
-import { APIResponse, IAPIResponse } from '../helpers/response.helper';
 import { SignupDto } from './dtos/signup.dto';
 import { MailService } from '../mail/mail.service';
 import { SigninEmailDto } from './dtos/signin-email.dto';
@@ -15,6 +22,7 @@ import { UpdateAccountDto } from './dtos/update-account.dto';
 import { AuthGoogleService } from '../auth-google/auth-google.service';
 import { AuthFacebookService } from '../auth-facebook/auth-facebook.service';
 import { User } from '../users/users.schema';
+import { APIResponse } from '../helpers';
 
 @Injectable()
 export class AuthService {
@@ -43,15 +51,13 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  public async signup(signupDto: SignupDto): IAPIResponse<Tokens> {
+  public async signup(signupDto: SignupDto): APIResponse<Tokens> {
     const foundUsers = await this.usersService.findOne({
       email: signupDto.email,
     });
 
     if (foundUsers) {
-      throw APIResponse.Error(HttpStatus.CONFLICT, {
-        email: 'email is already used',
-      });
+      throw new ConflictException('Email is already used');
     }
 
     const user = await this.usersService.create(signupDto);
@@ -68,18 +74,17 @@ export class AuthService {
     );
 
     await this.mailService.signupSuccess(user.email, user.name);
-    return APIResponse.Success(tokens, 'signup success');
+
+    return tokens;
   }
 
-  public async signin(signinEmailDto: SigninEmailDto): IAPIResponse<Tokens> {
+  public async signin(signinEmailDto: SigninEmailDto): APIResponse<Tokens> {
     const user = await this.usersService.findOne({
       email: signinEmailDto.email,
     });
 
     if (!user) {
-      throw APIResponse.Error(HttpStatus.BAD_REQUEST, {
-        email: 'email is not exist',
-      });
+      throw new BadRequestException('Email is not exist');
     }
 
     const isMatchedPassword = await Hashing.verify(
@@ -88,9 +93,7 @@ export class AuthService {
     );
 
     if (!isMatchedPassword) {
-      throw APIResponse.Error(HttpStatus.BAD_REQUEST, {
-        password: 'incorect password',
-      });
+      throw new BadRequestException('Incorrect password');
     }
 
     const tokens = await this.generateTokens({
@@ -104,18 +107,16 @@ export class AuthService {
       },
     );
 
-    return APIResponse.Success(tokens, 'signin success');
+    return tokens;
   }
 
   public async refreshTokens(
     userId: string,
     refreshToken: string,
-  ): IAPIResponse<Tokens> {
+  ): APIResponse<Tokens> {
     const user = await this.usersService.findOne({ _id: userId });
     if (!user || !user.refreshToken) {
-      throw APIResponse.Error(HttpStatus.UNAUTHORIZED, {
-        accessToken: 'access denied',
-      });
+      throw new UnauthorizedException('Access denied');
     }
 
     const isRefreshTokenMatch = await Hashing.verify(
@@ -124,9 +125,7 @@ export class AuthService {
     );
 
     if (!isRefreshTokenMatch) {
-      throw APIResponse.Error(HttpStatus.UNAUTHORIZED, {
-        accessToken: 'invalid refreshToken',
-      });
+      throw new UnauthorizedException('Invalid refreshToken');
     }
 
     const tokens = await this.generateTokens({
@@ -140,34 +139,31 @@ export class AuthService {
       },
     );
 
-    return APIResponse.Success(tokens, 'refresh new tokens success');
+    return tokens;
   }
 
   public async accountInfo(
     userId: string,
-  ): Promise<IAPIResponse<UserProfileSerialization>> {
+  ): APIResponse<UserProfileSerialization> {
     const user = await this.usersService.getUserInfo(userId);
 
     if (!user) {
-      throw APIResponse.Error(HttpStatus.FORBIDDEN, {
-        accessToken: 'invalid accessToken',
-      });
+      throw new ForbiddenException('Invalid accessToken');
     }
-    return APIResponse.Success(user, 'get account info success');
+
+    return user;
   }
 
   public async updatePassword(
     userId: string,
     password: string,
     newPassword: string,
-  ): IAPIResponse<null> {
+  ): APIResponse<void> {
     const user = await this.usersService.findOne({ _id: userId });
     const isMatchedPassword = await Hashing.verify(user.password, password);
 
     if (!isMatchedPassword) {
-      throw APIResponse.Error(HttpStatus.NOT_ACCEPTABLE, {
-        currentPassword: 'current password is not match',
-      });
+      throw new NotAcceptableException('Current password is not match');
     }
 
     await this.usersService.findOneAndUpdate(
@@ -179,18 +175,15 @@ export class AuthService {
     );
 
     await this.mailService.updatePasswordSuccess(user.email, user.name);
-    return APIResponse.Success(null, 'update password success');
   }
 
   public async deleteAccount(
     userId: string,
     deleteAccountDto: DeleteAccountDto,
-  ) {
+  ): APIResponse<void> {
     const user = await this.usersService.findOne({ _id: userId });
     if (!user) {
-      throw APIResponse.Error(HttpStatus.NOT_FOUND, {
-        user: 'user is not exist',
-      });
+      throw new NotFoundException('User is not exist');
     }
 
     const isMatchedPassword = await Hashing.verify(
@@ -198,9 +191,7 @@ export class AuthService {
       deleteAccountDto.password,
     );
     if (!isMatchedPassword) {
-      throw APIResponse.Error(HttpStatus.FORBIDDEN, {
-        password: 'password does not match',
-      });
+      throw new ForbiddenException('Password does not match');
     }
 
     const deletedAccount = await this.usersService.delete(userId);
@@ -208,39 +199,29 @@ export class AuthService {
       deletedAccount.email,
       deletedAccount.name,
     );
-    return APIResponse.Success(null, 'account deleted');
   }
 
-  public async verifyEmail(userId: string): IAPIResponse<null> {
+  public async verifyEmail(userId: string): APIResponse<void> {
     const user = await this.usersService.findOne({ _id: userId });
     if (!user) {
-      throw APIResponse.Error(HttpStatus.NOT_FOUND, {
-        user: 'user is not exist',
-      });
+      throw new NotFoundException('User is not exist');
     }
     if (!user.email) {
-      throw APIResponse.Error(HttpStatus.CONFLICT, {
-        user: 'account not had email to verify',
-      });
+      throw new ConflictException('Account not had email to verify');
     }
 
     if (user.isVerify) {
-      throw APIResponse.Error(HttpStatus.CONFLICT, {
-        user: 'user is already verify',
-      });
+      throw new ConflictException('User is already verify');
     }
 
     const verifyKey = await this.keysService.create(user._id);
     await this.mailService.verifyEmail(user.email, verifyKey.key, user.name);
-    return APIResponse.Success(null, 'verify account email is sent');
   }
 
-  public async confirmVerifyEmail(key: string) {
+  public async confirmVerifyEmail(key: string): APIResponse<void> {
     const verifyKey = await this.keysService.verify(key);
     if (!verifyKey) {
-      throw APIResponse.Error(HttpStatus.NOT_ACCEPTABLE, {
-        verifyKey: 'verifyKey is expired or invalid',
-      });
+      throw new NotAcceptableException('verifyKey is expired or invalid');
     }
 
     const user = await this.usersService.findOneAndUpdate(
@@ -249,71 +230,55 @@ export class AuthService {
     );
 
     if (!user) {
-      throw APIResponse.Error(HttpStatus.NOT_ACCEPTABLE, {
-        verifyKey: 'verifyKey is expired or invalid',
-      });
+      throw new NotAcceptableException('verifyKey is expired or invalid');
     }
     await this.keysService.revoke(key);
     await this.mailService.verifyEmailSuccess(user.email, user.name);
-    return APIResponse.Success(null, 'verify email success');
   }
 
-  public async signout(userId: string): Promise<IAPIResponse<null>> {
+  public async signout(userId: string): APIResponse<void> {
     const user = await this.usersService.findOneAndUpdate(
       { _id: userId, refreshToken: { $exists: true, $ne: null } },
       { refreshToken: null },
     );
 
     if (!user) {
-      throw APIResponse.Error(HttpStatus.FORBIDDEN, {
-        accessToken: 'invalid accessToken',
-      });
+      throw new UnauthorizedException('Invalid accessToken');
     }
-
-    return APIResponse.Success(null, 'signout success');
   }
 
-  public async forgotPassword(email: string): IAPIResponse<null> {
+  public async forgotPassword(email: string): APIResponse<void> {
     const user = await this.usersService.findOne({ email });
 
     if (!user) {
-      throw APIResponse.Error(HttpStatus.NOT_FOUND, {
-        email: `${email} is not exist`,
-      });
+      throw new NotFoundException('Email is not exist');
     }
 
     if (!user.isVerify) {
-      throw APIResponse.Error(HttpStatus.NOT_ACCEPTABLE, {
-        email: `${email} is not verified`,
-      });
+      throw new NotAcceptableException('Email is not verified');
     }
 
     try {
       const forgotPassword = await this.keysService.create(user._id);
-
       await this.mailService.forgotPassword(
         user.email,
         forgotPassword.key,
         user.name,
       );
-
-      return APIResponse.Success(null, 'reset password email is sent');
     } catch (error) {
-      throw APIResponse.Error(HttpStatus.NOT_ACCEPTABLE, {
-        email: 'reset password email is already sent, try again later',
-      });
+      throw new NotAcceptableException('Reset password email is already sent');
     }
   }
 
   public async resetPassword(
     forgotPasswordKey: string,
     newPassword: string,
-  ): IAPIResponse<null> {
+  ): APIResponse<void> {
     const forgotPassword = await this.keysService.verify(forgotPasswordKey);
     if (!forgotPassword) {
-      throw APIResponse.Error(HttpStatus.NOT_ACCEPTABLE, {
-        forgotPasswordKey: 'forgotPasswordKey is expired or invalid',
-      });
+      throw new NotAcceptableException(
+        'forgotPasswordKey is expired or invalid',
+      );
     }
 
     const user = await this.usersService.findOneAndUpdate(
@@ -322,24 +287,21 @@ export class AuthService {
     );
 
     if (!user) {
-      throw APIResponse.Error(HttpStatus.NOT_ACCEPTABLE, {
-        forgotPasswordKey: 'forgotPasswordKey is expired or invalid',
-      });
+      throw new NotAcceptableException(
+        'forgotPasswordKey is expired or invalid',
+      );
     }
 
     await this.keysService.revoke(forgotPasswordKey);
     await this.mailService.resetPasswordSuccess(user.email, user.name);
-    return APIResponse.Success(null, 'update new password success');
   }
 
   public async updateAccountInfo(
     userId: string,
     updateAccountInfoDto: UpdateAccountDto,
-  ): IAPIResponse<null> {
+  ): APIResponse<void> {
     if (!Object.keys(updateAccountInfoDto)) {
-      throw APIResponse.Error(HttpStatus.NOT_ACCEPTABLE, {
-        account: 'nothing new to update',
-      });
+      throw new NotAcceptableException('Nothing new to update');
     }
     if (updateAccountInfoDto.email) {
       const user = await this.usersService.findOne({
@@ -347,15 +309,13 @@ export class AuthService {
       });
 
       if (user && user._id.toString() === userId) {
-        throw APIResponse.Error(HttpStatus.NOT_ACCEPTABLE, {
-          email: `${updateAccountInfoDto.email} same as your old email`,
-        });
+        throw new NotAcceptableException('New email is same as your old email');
       }
 
       if (user && user._id.toString() !== userId) {
-        throw APIResponse.Error(HttpStatus.CONFLICT, {
-          email: `${updateAccountInfoDto.email} is being used by another account`,
-        });
+        throw new ConflictException(
+          'New email is being used by another account',
+        );
       }
     }
 
@@ -363,20 +323,14 @@ export class AuthService {
       { _id: userId },
       updateAccountInfoDto,
     );
-
-    return APIResponse.Success(null, 'update account info success');
   }
 
-  public async googleSignIn(
-    googleAccessToken: string,
-  ): Promise<IAPIResponse<Tokens>> {
+  public async googleSignIn(googleAccessToken: string): APIResponse<Tokens> {
     const googleUserInfo = await this.authGoogleService.verify(
       googleAccessToken,
     );
     if (!googleUserInfo) {
-      throw APIResponse.Error(HttpStatus.BAD_REQUEST, {
-        googleAccessToken: 'google accessToken invalid',
-      });
+      throw new BadRequestException('Google accessToken invalid');
     }
 
     const user = await this.usersService.findOne({
@@ -407,10 +361,7 @@ export class AuthService {
       // Only send email notification when signin first time
       await this.mailService.signupSuccess(newUser.google.email, newUser.name);
 
-      return APIResponse.Success(
-        tokens,
-        'signin with google for new user success',
-      );
+      return tokens;
     }
 
     const tokens = await this.generateTokens({
@@ -424,15 +375,16 @@ export class AuthService {
       },
     );
 
-    return APIResponse.Success(tokens, 'signin with google success');
+    return tokens;
   }
 
-  public async connectGoogle(userId: string, googleAccessToken: string) {
+  public async connectGoogle(
+    userId: string,
+    googleAccessToken: string,
+  ): APIResponse<void> {
     const user = await this.usersService.findOne({ _id: userId });
     if (user?.google?.id) {
-      throw APIResponse.Error(HttpStatus.CONFLICT, {
-        googleId: 'your account already connect with google',
-      });
+      throw new ConflictException('Your account already connect with Google');
     }
 
     const googleUserInfo = await this.authGoogleService.verify(
@@ -440,38 +392,32 @@ export class AuthService {
     );
 
     if (!googleUserInfo) {
-      throw APIResponse.Error(HttpStatus.BAD_REQUEST, {
-        googleAccessToken: 'google accessToken invalid',
-      });
+      throw new BadRequestException('Google accessToken invalid');
     }
 
     const isConnectedToAnotherAccount = await this.usersService.findOne({
       'google.id': googleUserInfo.id,
     });
     if (isConnectedToAnotherAccount) {
-      throw APIResponse.Error(HttpStatus.BAD_REQUEST, {
-        googleAccount: 'this google account already connect to another account',
-      });
+      throw new BadRequestException(
+        'This Google account is being connected to another account',
+      );
     }
 
     await this.usersService.findOneAndUpdate(
       { _id: userId },
       { google: { id: googleUserInfo.id, email: googleUserInfo.email } },
     );
-
-    return APIResponse.Success(null, 'connect google account success');
   }
 
   public async facebookSignIn(
     facebookAccessToken: string,
-  ): Promise<IAPIResponse<Tokens>> {
+  ): APIResponse<Tokens> {
     const facebookUserInfo = await this.authFacebookService.verify(
       facebookAccessToken,
     );
     if (!facebookUserInfo) {
-      throw APIResponse.Error(HttpStatus.BAD_REQUEST, {
-        facebookAccessToken: 'facebook accessToken invalid',
-      });
+      throw new BadRequestException('Facebook accessToken invalid');
     }
 
     const user = await this.usersService.findOne({
@@ -505,10 +451,7 @@ export class AuthService {
         newUser.name,
       );
 
-      return APIResponse.Success(
-        tokens,
-        'signin with facebook for new user success',
-      );
+      return tokens;
     }
 
     const tokens = await this.generateTokens({
@@ -522,67 +465,62 @@ export class AuthService {
       },
     );
 
-    return APIResponse.Success(tokens, 'signin with facebook success');
+    return tokens;
   }
 
-  public async connectFacebook(userId: string, facebookAccessToken: string) {
+  public async connectFacebook(
+    userId: string,
+    facebookAccessToken: string,
+  ): APIResponse<void> {
     const user = await this.usersService.findOne({ _id: userId });
     if (user?.facebook?.id) {
-      throw APIResponse.Error(HttpStatus.CONFLICT, {
-        facebookId: 'your account already connect with facebook',
-      });
+      throw new ConflictException('Your account already connect with Facebook');
     }
 
     const facebookUserInfo = await this.authFacebookService.verify(
       facebookAccessToken,
     );
     if (!facebookUserInfo) {
-      throw APIResponse.Error(HttpStatus.BAD_REQUEST, {
-        facebookAccessToken: 'facebook accessToken invalid',
-      });
+      throw new BadRequestException('Facebook accessToken invalid');
     }
 
     const isConnectedToAnotherAccount = await this.usersService.findOne({
       'facebook.id': facebookUserInfo.id,
     });
     if (isConnectedToAnotherAccount) {
-      throw APIResponse.Error(HttpStatus.BAD_REQUEST, {
-        facebookAccount:
-          'this facebook account already connect to another account',
-      });
+      throw new BadRequestException(
+        'This Facebook account is being connected to another account',
+      );
     }
 
     await this.usersService.findOneAndUpdate(
       { _id: userId },
       { facebook: { id: facebookUserInfo.id, email: facebookUserInfo.email } },
     );
-
-    return APIResponse.Success(null, 'connect facebook account success');
   }
 
-  public async connectEmail(userId: string, connectEmailDto: SigninEmailDto) {
+  public async connectEmail(
+    userId: string,
+    connectEmailDto: SigninEmailDto,
+  ): APIResponse<void> {
     const user = await this.usersService.findOne({ _id: userId });
     if (user?.email) {
-      throw APIResponse.Error(HttpStatus.CONFLICT, {
-        email: 'your account already connect with email',
-      });
+      throw new ConflictException('Your account already connect with email');
     }
 
     const userUsingThisEmail = await this.usersService.findOne({
       email: connectEmailDto.email,
     });
     if (userUsingThisEmail) {
-      throw APIResponse.Error(HttpStatus.BAD_REQUEST, {
-        email: 'this email already connect to another account',
-      });
+      throw new BadRequestException(
+        'This Email is being connected to another account',
+      );
     }
 
     await this.usersService.findOneAndUpdate(
       { _id: userId },
       { email: connectEmailDto.email, password: connectEmailDto.password },
     );
-
-    return APIResponse.Success(null, 'connect email success');
   }
 
   private countAuthMethods(user: User): number {
@@ -597,9 +535,7 @@ export class AuthService {
     const user = await this.usersService.findOne({ _id: userId });
     const numSigninMethods = this.countAuthMethods(user);
     if (numSigninMethods < 2) {
-      throw APIResponse.Error(HttpStatus.BAD_REQUEST, {
-        auth: 'account need at least 1 signin method',
-      });
+      throw new NotAcceptableException('Account need atleast 1 sign method');
     }
 
     switch (accountType) {
@@ -622,7 +558,5 @@ export class AuthService {
         );
         break;
     }
-
-    return APIResponse.Success(null, `unlink ${accountType} success`);
   }
 }
