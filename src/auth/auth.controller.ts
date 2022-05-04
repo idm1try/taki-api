@@ -106,7 +106,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   resetPassword(
     @Body() resetPasswordDto: ResetPasswordDto,
-    @Query('forgotPasswordKey ') forgotPasswordKey: string,
+    @Query('forgotPasswordKey') forgotPasswordKey: string,
   ) {
     return this.authService.resetPassword(
       forgotPasswordKey,
