@@ -7,6 +7,7 @@ import { appConfig, authConfig, mailConfig, mongoConfig } from './config';
 import { MongooseConfigService } from './database/mongoose.database';
 import { KeyModule } from './key/key.module';
 import { MailConfigService } from './mail/mail-config.service';
+import { TaskModule } from './task/task.module';
 import { UserModule } from './user/user.module';
 
 @Module({
@@ -25,6 +26,7 @@ import { UserModule } from './user/user.module';
     UserModule,
     AuthModule,
     KeyModule,
+    TaskModule,
   ],
   controllers: [],
   providers: [],
