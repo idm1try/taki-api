@@ -20,4 +20,12 @@ export class TaskService {
 
     return task;
   }
+
+  public async getAll(
+    userId: string,
+    skip: number,
+    limit: number,
+  ): APIResponse<Task[]> {
+    return this.taskModel.find({ user: userId }).skip(skip).limit(limit).lean();
+  }
 }

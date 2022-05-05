@@ -1,6 +1,7 @@
+import { createMock } from '@golevelup/ts-jest';
 import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Model } from 'mongoose';
+import { Model, Query } from 'mongoose';
 import { User } from '../user/user.schema';
 import { Task } from './task.schema';
 import { TaskService } from './task.service';
@@ -64,6 +65,34 @@ describe('TasksService', () => {
         user: task.user._id,
         desc: task.desc,
       });
+    });
+  });
+
+  describe('getAll', () => {
+    it('should get all task by userId', async () => {
+      const tasks = [
+        createTaskDoc({ title: 'Walking' }),
+        createTaskDoc({ title: 'Studying' }),
+        createTaskDoc({ title: 'Do home work' }),
+      ];
+
+      const spyModelFind = jest.spyOn(model, 'find').mockReturnValueOnce(
+        createMock<Query<User[], User[]>>({
+          skip: jest.fn().mockReturnValueOnce(
+            createMock<Query<User[], User[]>>({
+              limit: jest.fn().mockReturnValueOnce(
+                createMock<Query<User[], User[]>>({
+                  lean: jest.fn().mockResolvedValueOnce(tasks as Task[]),
+                }),
+              ),
+            }),
+          ),
+        }),
+      );
+
+      const result = await service.getAll('1', 0, 3);
+      expect(result).toEqual(tasks);
+      expect(spyModelFind).toBeCalledWith({ user: '1' });
     });
   });
 });

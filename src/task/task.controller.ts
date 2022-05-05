@@ -1,9 +1,13 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
+  Get,
   HttpCode,
   HttpStatus,
+  ParseIntPipe,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -27,4 +31,16 @@ export class TaskController {
   ) {
     return this.tasksService.create(req.user.userId, createTaskDto);
   }
+
+  @Get()
+  @UseGuards(JwtAccessGuard)
+  @HttpCode(HttpStatus.OK)
+  getAll(
+    @Req() req: RequestWithParsedPayload,
+    @Query('skip', new DefaultValuePipe(0), ParseIntPipe) skip: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+  ) {
+    return this.tasksService.getAll(req.user.userId, skip, limit);
+  }
 }
+
