@@ -1,13 +1,13 @@
+import { MailerModule } from '@nestjs-modules/mailer';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import { MailerModule } from '@nestjs-modules/mailer';
+import { AuthModule } from './auth/auth.module';
+import { appConfig, authConfig, mailConfig, mongoConfig } from './config';
 import { MongooseConfigService } from './database/mongoose.database';
-import { UserModule } from './user/user.module';
 import { KeyModule } from './key/key.module';
 import { MailConfigService } from './mail/mail-config.service';
-import { AuthModule } from './auth/auth.module';
-import { appConfig, mongoConfig, authConfig, mailConfig } from './config';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [

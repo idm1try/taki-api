@@ -1,7 +1,7 @@
+import { createMock } from '@golevelup/ts-jest';
+import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Model, Query } from 'mongoose';
-import { getModelToken } from '@nestjs/mongoose';
-import { createMock } from '@golevelup/ts-jest';
 import { User } from './user.schema';
 import { UserService } from './user.service';
 

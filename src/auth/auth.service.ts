@@ -1,4 +1,3 @@
-import { ConfigService } from '@nestjs/config';
 import {
   BadRequestException,
   ConflictException,
@@ -8,21 +7,22 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { UserService } from '../user/user.service';
-import { AccountType, Payload, Tokens } from './auth.type';
-import { SignupDto } from './dto/signup.dto';
-import { MailService } from '../mail/mail.service';
-import { SigninEmailDto } from './dto/signin-email.dto';
-import { Hashing } from '../utils';
-import { UserProfileSerialization } from '../user/serialization/user-profile.serialization';
-import { DeleteAccountDto } from './dto/delete-account.dto';
-import { KeyService } from '../key/key.service';
-import { UpdateAccountDto } from './dto/update-account.dto';
-import { AuthGoogleService } from '../auth-google/auth-google.service';
 import { AuthFacebookService } from '../auth-facebook/auth-facebook.service';
-import { User } from '../user/user.schema';
+import { AuthGoogleService } from '../auth-google/auth-google.service';
 import { APIResponse } from '../helpers';
+import { KeyService } from '../key/key.service';
+import { MailService } from '../mail/mail.service';
+import { UserProfileSerialization } from '../user/serialization/user-profile.serialization';
+import { User } from '../user/user.schema';
+import { UserService } from '../user/user.service';
+import { Hashing } from '../utils';
+import { AccountType, Payload, Tokens } from './auth.type';
+import { DeleteAccountDto } from './dto/delete-account.dto';
+import { SigninEmailDto } from './dto/signin-email.dto';
+import { SignupDto } from './dto/signup.dto';
+import { UpdateAccountDto } from './dto/update-account.dto';
 
 @Injectable()
 export class AuthService {

@@ -2,19 +2,19 @@ import { HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
-import { User } from '../user/user.schema';
-import { UserService } from '../user/user.service';
-import { AuthService } from './auth.service';
-import { KeyService } from '../key/key.service';
-import { MailService } from '../mail/mail.service';
 import { createMockFromClass } from '../../test/utils/createMockFromClass';
-import { Hashing } from '../utils';
-import { UserProfileSerialization } from '../user/serialization/user-profile.serialization';
-import { Key } from '../key/key.schema';
-import { AuthGoogleService } from '../auth-google/auth-google.service';
 import { AuthFacebookService } from '../auth-facebook/auth-facebook.service';
 import { FacebookAccountInfo } from '../auth-facebook/auth-facebook.type';
+import { AuthGoogleService } from '../auth-google/auth-google.service';
 import { GoogleAccountInfo } from '../auth-google/auth-google.type';
+import { Key } from '../key/key.schema';
+import { KeyService } from '../key/key.service';
+import { MailService } from '../mail/mail.service';
+import { UserProfileSerialization } from '../user/serialization/user-profile.serialization';
+import { User } from '../user/user.schema';
+import { UserService } from '../user/user.service';
+import { Hashing } from '../utils';
+import { AuthService } from './auth.service';
 import { AccountType } from './auth.type';
 
 const createUserDoc = (override: Partial<User> = {}): Partial<User> => ({

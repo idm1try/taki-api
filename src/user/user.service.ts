@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { plainToInstance } from 'class-transformer';
 import {
+  FilterQuery,
   Model,
   SchemaDefinitionType,
-  FilterQuery,
   UpdateQuery,
 } from 'mongoose';
-import { plainToInstance } from 'class-transformer';
-import { User } from './user.schema';
 import { UserProfileSerialization } from './serialization/user-profile.serialization';
+import { User } from './user.schema';
 
 @Injectable()
 export class UserService {
