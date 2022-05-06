@@ -1,4 +1,5 @@
 import { createMock } from '@golevelup/ts-jest';
+import { HttpStatus } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Model, Query } from 'mongoose';
@@ -93,6 +94,40 @@ describe('TasksService', () => {
       const result = await service.getAll('1', 0, 3);
       expect(result).toEqual(tasks);
       expect(spyModelFind).toBeCalledWith({ user: '1' });
+    });
+  });
+
+  describe('deleteOne', () => {
+    it('should throw error when task not exist', async () => {
+      jest.spyOn(model, 'deleteOne').mockReturnValueOnce(
+        createMock<Query<any, any>>({
+          exec: jest.fn().mockResolvedValueOnce({ deletedCound: 0 }),
+        }),
+      );
+
+      try {
+        await service.deleteOne('not-exist-userid-1', 'taskid-1');
+      } catch (error) {
+        expect(error.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
+        expect(error.message).toEqual('Task not found to delete');
+      }
+    });
+
+    it('should delete a task', async () => {
+      const spyModelDeleteOne = jest
+        .spyOn(model, 'deleteOne')
+        .mockReturnValueOnce(
+          createMock<Query<any, any>>({
+            exec: jest.fn().mockResolvedValueOnce({ deletedCount: 1 }),
+          }),
+        );
+
+      await service.deleteOne('userid-1', 'taskid-1');
+
+      expect(spyModelDeleteOne).toBeCalledWith({
+        _id: 'taskid-1',
+        user: 'userid-1',
+      });
     });
   });
 });

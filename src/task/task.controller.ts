@@ -2,9 +2,11 @@ import {
   Body,
   Controller,
   DefaultValuePipe,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   ParseIntPipe,
   Post,
   Query,
@@ -42,5 +44,11 @@ export class TaskController {
   ) {
     return this.tasksService.getAll(req.user.userId, skip, limit);
   }
-}
 
+  @Delete(':id')
+  @UseGuards(JwtAccessGuard)
+  @HttpCode(HttpStatus.OK)
+  delete(@Req() req: RequestWithParsedPayload, @Param('id') id: string) {
+    return this.tasksService.deleteOne(req.user.userId, id);
+  }
+}

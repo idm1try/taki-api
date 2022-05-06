@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotAcceptableException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { APIResponse } from '../helpers';
@@ -27,5 +27,17 @@ export class TaskService {
     limit: number,
   ): APIResponse<Task[]> {
     return this.taskModel.find({ user: userId }).skip(skip).limit(limit).lean();
+  }
+
+  public async deleteOne(userId: string, taskId: string): APIResponse<void> {
+    const response = await this.taskModel
+      .deleteOne({
+        _id: taskId,
+        user: userId,
+      })
+      .exec();
+    if (!response.deletedCount) {
+      throw new NotAcceptableException('Task not found to delete');
+    }
   }
 }
