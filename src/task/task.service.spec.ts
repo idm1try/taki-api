@@ -99,11 +99,9 @@ describe('TasksService', () => {
 
   describe('deleteOne', () => {
     it('should throw error when task not exist', async () => {
-      jest.spyOn(model, 'deleteOne').mockReturnValueOnce(
-        createMock<Query<any, any>>({
-          exec: jest.fn().mockResolvedValueOnce({ deletedCound: 0 }),
-        }),
-      );
+      jest
+        .spyOn(model, 'deleteOne')
+        .mockRejectedValueOnce(new Error('Not exist id'));
 
       try {
         await service.deleteOne('not-exist-userid-1', 'taskid-1');
@@ -114,18 +112,43 @@ describe('TasksService', () => {
     });
 
     it('should delete a task', async () => {
-      const spyModelDeleteOne = jest
-        .spyOn(model, 'deleteOne')
-        .mockReturnValueOnce(
-          createMock<Query<any, any>>({
-            exec: jest.fn().mockResolvedValueOnce({ deletedCount: 1 }),
-          }),
-        );
-
+      const spyModelDeleteOne = jest.spyOn(model, 'deleteOne').mockReturnThis();
       await service.deleteOne('userid-1', 'taskid-1');
-
       expect(spyModelDeleteOne).toBeCalledWith({
         _id: 'taskid-1',
+        user: 'userid-1',
+      });
+    });
+  });
+
+  describe('deleteMany', () => {
+    it('should throw error when some tasks not exist', async () => {
+      jest
+        .spyOn(model, 'deleteMany')
+        .mockRejectedValueOnce(new Error('Not exist id'));
+
+      try {
+        await service.deleteMany('not-exist-userid-1', [
+          'taskid-1',
+          'taskid-2',
+          'taskid-3',
+        ]);
+      } catch (error) {
+        expect(error.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
+        expect(error.message).toEqual('Tasks not found to delete');
+      }
+    });
+
+    it('should delete a task', async () => {
+      const taskIds = ['taskid-1', 'taskid-2', 'taskid-3'];
+      const spyModelDeleteMany = jest
+        .spyOn(model, 'deleteMany')
+        .mockReturnThis();
+
+      await service.deleteMany('userid-1', taskIds);
+
+      expect(spyModelDeleteMany).toBeCalledWith({
+        _id: { $in: taskIds },
         user: 'userid-1',
       });
     });

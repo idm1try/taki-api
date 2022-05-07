@@ -30,14 +30,24 @@ export class TaskService {
   }
 
   public async deleteOne(userId: string, taskId: string): APIResponse<void> {
-    const response = await this.taskModel
-      .deleteOne({
+    try {
+      await this.taskModel.deleteOne({
         _id: taskId,
         user: userId,
-      })
-      .exec();
-    if (!response.deletedCount) {
+      });
+    } catch (error) {
       throw new NotAcceptableException('Task not found to delete');
+    }
+  }
+
+  public async deleteMany(
+    userId: string,
+    taskIds: string[],
+  ): APIResponse<void> {
+    try {
+      await this.taskModel.deleteMany({ _id: { $in: taskIds }, user: userId });
+    } catch (error) {
+      throw new NotAcceptableException('Tasks not found to delete');
     }
   }
 }
