@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { APIResponse } from '../helpers';
 import { CreateTaskDto } from './dto/create-task.dto';
+import { UpdateTaskDto } from './dto/update-task.dto';
 import { Task } from './task.schema';
 
 @Injectable()
@@ -48,6 +49,25 @@ export class TaskService {
       await this.taskModel.deleteMany({ _id: { $in: taskIds }, user: userId });
     } catch (error) {
       throw new NotAcceptableException('Tasks not found to delete');
+    }
+  }
+
+  public async update(
+    userId: string,
+    taskId: string,
+    updateTaskDto: UpdateTaskDto,
+  ): APIResponse<Task> {
+    if (!Object.keys(updateTaskDto).length) {
+      throw new NotAcceptableException('Nothing new to update');
+    }
+
+    try {
+      const updatedTask = await this.taskModel
+        .findOneAndUpdate({ _id: taskId, user: userId }, updateTaskDto)
+        .exec();
+      return updatedTask;
+    } catch (error) {
+      throw new NotAcceptableException('Task not found to update');
     }
   }
 }

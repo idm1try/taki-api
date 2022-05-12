@@ -1,24 +1,26 @@
 import {
-    Body,
-    Controller,
-    DefaultValuePipe,
-    Delete,
-    Get,
-    HttpCode,
-    HttpStatus,
-    Param,
-    ParseIntPipe,
-    Post,
-    Query,
-    Req,
-    UseGuards
+  Body,
+  Controller,
+  DefaultValuePipe,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { RequestWithParsedPayload } from 'src/auth/auth.type';
 import { JwtAccessGuard } from '../auth/guard/jwt-access.guard';
 import { CreateTaskDto } from './dto/create-task.dto';
+import { DeleteManyTasksDto } from './dto/delete-many-tasks.dto';
+import { UpdateTaskDto } from './dto/update-task.dto';
 import { TaskService } from './task.service';
-import {DeleteManyTasksDto} from './dto/delete-many-tasks.dto'
 
 @ApiTags('tasks')
 @Controller('tasks')
@@ -56,8 +58,24 @@ export class TaskController {
   @Delete()
   @UseGuards(JwtAccessGuard)
   @HttpCode(HttpStatus.OK)
-  deleteMany(@Req() req: RequestWithParsedPayload, @Body() deleteManyTasksDto: DeleteManyTasksDto) {
-    return this.tasksService.deleteMany(req.user.userId, deleteManyTasksDto.taskIds );
+  deleteMany(
+    @Req() req: RequestWithParsedPayload,
+    @Body() deleteManyTasksDto: DeleteManyTasksDto,
+  ) {
+    return this.tasksService.deleteMany(
+      req.user.userId,
+      deleteManyTasksDto.taskIds,
+    );
   }
 
+  @Patch(':id')
+  @UseGuards(JwtAccessGuard)
+  @HttpCode(HttpStatus.OK)
+  update(
+    @Req() req: RequestWithParsedPayload,
+    @Body() updateTaskDto: UpdateTaskDto,
+    @Param('id') id: string,
+  ) {
+    return this.tasksService.update(req.user.userId, id, updateTaskDto);
+  }
 }

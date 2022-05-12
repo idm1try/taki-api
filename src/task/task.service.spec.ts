@@ -153,4 +153,42 @@ describe('TasksService', () => {
       });
     });
   });
+
+  describe('update', () => {
+    it('should throw error when nothing new to update', async () => {
+      try {
+        await service.update('userid-1', 'taskid-1', {});
+      } catch (error) {
+        expect(error.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
+        expect(error.message).toEqual('Nothing new to update');
+      }
+    });
+
+    it('should update a task', async () => {
+      const task = createTaskDoc();
+      const updateTaskDto = { title: 'Updated Title' };
+
+      const spyModelUpdateOne = jest
+        .spyOn(model, 'findOneAndUpdate')
+        .mockReturnValueOnce(
+          createMock<Query<User[], User[]>>({
+            exec: jest
+              .fn()
+              .mockResolvedValueOnce({ ...task, ...updateTaskDto }),
+          }),
+        );
+
+      const response = await service.update(
+        task.user._id,
+        task._id,
+        updateTaskDto,
+      );
+
+      expect(response).toEqual({ ...task, ...updateTaskDto });
+      expect(spyModelUpdateOne).toBeCalledWith(
+        { _id: task._id, user: task.user._id },
+        updateTaskDto,
+      );
+    });
+  });
 });
