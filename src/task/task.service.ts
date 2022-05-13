@@ -63,7 +63,9 @@ export class TaskService {
 
     try {
       const updatedTask = await this.taskModel
-        .findOneAndUpdate({ _id: taskId, user: userId }, updateTaskDto)
+        .findOneAndUpdate({ _id: taskId, user: userId }, updateTaskDto, {
+          returnDocument: 'after',
+        })
         .exec();
       return updatedTask;
     } catch (error) {

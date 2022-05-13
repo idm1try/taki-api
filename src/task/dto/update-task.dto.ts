@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
+  IsBoolean,
   IsDate,
   IsEnum,
   IsNotEmpty,
@@ -37,4 +38,8 @@ export class UpdateTaskDto {
   @IsDate()
   @ApiProperty({ type: Date, required: false })
   onDate?: Date;
+
+  @IsOptional()
+  @IsBoolean()
+  isDone?: boolean;
 }

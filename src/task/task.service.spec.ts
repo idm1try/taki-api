@@ -188,6 +188,9 @@ describe('TasksService', () => {
       expect(spyModelUpdateOne).toBeCalledWith(
         { _id: task._id, user: task.user._id },
         updateTaskDto,
+        {
+          returnDocument: 'after',
+        },
       );
     });
   });
