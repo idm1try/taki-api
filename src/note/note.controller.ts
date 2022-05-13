@@ -17,24 +17,24 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { RequestWithParsedPayload } from '../auth/auth.type';
 import { JwtAccessGuard } from '../auth/guard/jwt-access.guard';
-import { CreateTaskDto } from './dto/create-task.dto';
-import { DeleteManyTasksDto } from './dto/delete-many-tasks.dto';
-import { UpdateTaskDto } from './dto/update-task.dto';
-import { TaskService } from './task.service';
+import { CreateNoteDto } from './dto/create-note.dto';
+import { DeleteManyNotesDto } from './dto/delete-many-notes.dto';
+import { UpdateNoteDto } from './dto/update-note.dto';
+import { NoteService } from './note.service';
 
-@ApiTags('tasks')
-@Controller('tasks')
-export class TaskController {
-  constructor(private readonly taskService: TaskService) {}
+@ApiTags('notes')
+@Controller('notes')
+export class NoteController {
+  constructor(private readonly noteService: NoteService) {}
 
   @Post()
   @UseGuards(JwtAccessGuard)
   @HttpCode(HttpStatus.OK)
   create(
     @Req() req: RequestWithParsedPayload,
-    @Body() createTaskDto: CreateTaskDto,
+    @Body() createNoteDto: CreateNoteDto,
   ) {
-    return this.taskService.create(req.user.userId, createTaskDto);
+    return this.noteService.create(req.user.userId, createNoteDto);
   }
 
   @Get()
@@ -45,14 +45,14 @@ export class TaskController {
     @Query('skip', new DefaultValuePipe(0), ParseIntPipe) skip: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
   ) {
-    return this.taskService.getAll(req.user.userId, skip, limit);
+    return this.noteService.getAll(req.user.userId, skip, limit);
   }
 
   @Delete(':id')
   @UseGuards(JwtAccessGuard)
   @HttpCode(HttpStatus.OK)
   deleteOne(@Req() req: RequestWithParsedPayload, @Param('id') id: string) {
-    return this.taskService.deleteOne(req.user.userId, id);
+    return this.noteService.deleteOne(req.user.userId, id);
   }
 
   @Delete()
@@ -60,11 +60,11 @@ export class TaskController {
   @HttpCode(HttpStatus.OK)
   deleteMany(
     @Req() req: RequestWithParsedPayload,
-    @Body() deleteManyTasksDto: DeleteManyTasksDto,
+    @Body() deleteManyNotesDto: DeleteManyNotesDto,
   ) {
-    return this.taskService.deleteMany(
+    return this.noteService.deleteMany(
       req.user.userId,
-      deleteManyTasksDto.taskIds,
+      deleteManyNotesDto.noteIds,
     );
   }
 
@@ -73,9 +73,9 @@ export class TaskController {
   @HttpCode(HttpStatus.OK)
   update(
     @Req() req: RequestWithParsedPayload,
-    @Body() updateTaskDto: UpdateTaskDto,
+    @Body() updateNoteDto: UpdateNoteDto,
     @Param('id') id: string,
   ) {
-    return this.taskService.update(req.user.userId, id, updateTaskDto);
+    return this.noteService.update(req.user.userId, id, updateNoteDto);
   }
 }

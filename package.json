@@ -18,7 +18,8 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "prepare": "husky install"
   },
   "dependencies": {
     "@nestjs-modules/mailer": "^1.6.1",
@@ -47,8 +48,9 @@
     "swagger-ui-express": "^4.3.0"
   },
   "devDependencies": {
-    "@commitlint/cli": "^16.2.3",
+    "@commitlint/cli": "^16.3.0",
     "@commitlint/config-conventional": "^16.2.1",
+    "@commitlint/types": "^17.0.0",
     "@golevelup/ts-jest": "^0.3.3",
     "@nestjs/cli": "^8.0.0",
     "@nestjs/schematics": "^8.0.0",
@@ -65,7 +67,7 @@
     "eslint": "^8.0.1",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",
-    "husky": "^7.0.4",
+    "husky": "^8.0.1",
     "jest": "^27.2.5",
     "prettier": "^2.3.2",
     "source-map-support": "^0.5.20",
