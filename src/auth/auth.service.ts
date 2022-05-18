@@ -533,6 +533,10 @@ export class AuthService {
 
   public async unlinkAccount(userId: string, accountType: AccountType) {
     const user = await this.userService.findOne({ _id: userId });
+    if (!user) {
+      throw new ForbiddenException('accessToken is not valid');
+    }
+
     const numSigninMethods = this.countAuthMethods(user);
     if (numSigninMethods < 2) {
       throw new NotAcceptableException('Account need atleast 1 sign method');

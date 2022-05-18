@@ -1438,13 +1438,24 @@ describe('AuthService', () => {
   });
 
   describe('unlinkAccount', () => {
+    it('should throw error when accessToken not valid', async () => {
+      jest.spyOn(userService, 'findOne').mockResolvedValueOnce(null as User);
+
+      try {
+        await service.unlinkAccount('1', AccountType.Email);
+      } catch (error) {
+        expect(error.status).toEqual(HttpStatus.FORBIDDEN);
+        expect(error.message).toEqual('accessToken is not valid');
+      }
+    });
+
     it('should throw error when account had only one signin method', async () => {
       const user = createUserDoc({ email: 'test@gmail.com' });
 
       jest.spyOn(userService, 'findOne').mockResolvedValueOnce(user as User);
 
       try {
-        await service.unlinkAccount('1', AccountType.Email);
+        await service.unlinkAccount(user._id, AccountType.Email);
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
         expect(error.message).toEqual('Account need atleast 1 sign method');
