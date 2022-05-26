@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Facebook } from 'fb';
-import { FacebookAccountInfo } from './auth-facebook.type';
+import { ThirdPartyAccountInfo } from './auth.type';
 
 @Injectable()
 export class AuthFacebookService {
@@ -17,7 +17,7 @@ export class AuthFacebookService {
 
   public async verify(
     accessToken: string,
-  ): Promise<FacebookAccountInfo | undefined> {
+  ): Promise<ThirdPartyAccountInfo | undefined> {
     try {
       this.fb.setAccessToken(accessToken);
       const userInfo = await this.fb.api('me', {
@@ -26,7 +26,7 @@ export class AuthFacebookService {
 
       // Revoke facebook access token after get info for security
       await this.fb.api('/me/permissions', 'delete');
-      return userInfo as FacebookAccountInfo;
+      return userInfo as ThirdPartyAccountInfo;
     } catch (error) {
       return undefined;
     }

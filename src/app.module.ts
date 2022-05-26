@@ -4,7 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from './auth/auth.module';
 import { appConfig, authConfig, mailConfig, mongoConfig } from './config';
-import { MongooseConfigService } from './database/mongoose.database';
+import { MongooseConfigService } from './providers/database/mongoose.database';
 import { KeyModule } from './key/key.module';
 import { MailConfigService } from './mail/mail-config.service';
 import { NoteModule } from './note/note.module';

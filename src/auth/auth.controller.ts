@@ -13,6 +13,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { JwtAccessGuard, JwtRefreshGuard } from '../common/guards';
 import { AuthService } from './auth.service';
 import { RequestWithParsedPayload } from './auth.type';
 import { DeleteAccountDto } from './dto/delete-account.dto';
@@ -25,8 +26,6 @@ import { SigninEmailDto } from './dto/signin-email.dto';
 import { SignupDto } from './dto/signup.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
-import { JwtAccessGuard } from './guard/jwt-access.guard';
-import { JwtRefreshGuard } from './guard/jwt-refresh.guard';
 
 @ApiTags('auth')
 @Controller('auth')

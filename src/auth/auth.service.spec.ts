@@ -3,17 +3,16 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { createMockFromClass } from '../../test/utils/createMockFromClass';
-import { AuthFacebookService } from '../auth-facebook/auth-facebook.service';
-import { FacebookAccountInfo } from '../auth-facebook/auth-facebook.type';
-import { AuthGoogleService } from '../auth-google/auth-google.service';
-import { GoogleAccountInfo } from '../auth-google/auth-google.type';
+import { AuthFacebookService } from './auth-facebook.service';
+import { AuthGoogleService } from './auth-google.service';
+import { ThirdPartyAccountInfo } from './auth.type';
 import { Key } from '../key/key.schema';
 import { KeyService } from '../key/key.service';
 import { MailService } from '../mail/mail.service';
 import { UserProfileSerialization } from '../user/serialization/user-profile.serialization';
 import { User } from '../user/user.schema';
 import { UserService } from '../user/user.service';
-import { Hashing } from '../utils';
+import { Hashing } from '../common/helpers';
 import { AuthService } from './auth.service';
 import { AccountType } from './auth.type';
 
@@ -900,7 +899,7 @@ describe('AuthService', () => {
         .mockResolvedValueOnce({
           name: user.name,
           ...user.google,
-        } as GoogleAccountInfo);
+        } as ThirdPartyAccountInfo);
 
       const spyUserServiceFindOne = jest
         .spyOn(userService, 'findOne')
@@ -971,7 +970,7 @@ describe('AuthService', () => {
         .mockResolvedValueOnce({
           name: user.name,
           ...user.google,
-        } as GoogleAccountInfo);
+        } as ThirdPartyAccountInfo);
 
       const spyUserServiceFindOne = jest
         .spyOn(userService, 'findOne')
@@ -1072,7 +1071,7 @@ describe('AuthService', () => {
       jest.spyOn(authGoogleService, 'verify').mockResolvedValueOnce({
         name: user.name,
         ...user.google,
-      } as GoogleAccountInfo);
+      } as ThirdPartyAccountInfo);
 
       try {
         await service.connectGoogle(user._id, 'valid-google-access-token');
@@ -1095,7 +1094,7 @@ describe('AuthService', () => {
         .mockResolvedValueOnce({
           name: user.name,
           ...user.google,
-        } as GoogleAccountInfo);
+        } as ThirdPartyAccountInfo);
 
       const spyUserServiceFindOneAndUpdate = jest
         .spyOn(userService, 'findOneAndUpdate')
@@ -1143,7 +1142,7 @@ describe('AuthService', () => {
         .mockResolvedValueOnce({
           name: user.name,
           ...user.facebook,
-        } as FacebookAccountInfo);
+        } as ThirdPartyAccountInfo);
 
       const spyUserServiceFindOne = jest
         .spyOn(userService, 'findOne')
@@ -1219,7 +1218,7 @@ describe('AuthService', () => {
         .mockResolvedValueOnce({
           name: user.name,
           ...user.facebook,
-        } as FacebookAccountInfo);
+        } as ThirdPartyAccountInfo);
 
       const spyUserServiceFindOne = jest
         .spyOn(userService, 'findOne')
@@ -1326,7 +1325,7 @@ describe('AuthService', () => {
       jest.spyOn(authFacebookService, 'verify').mockResolvedValueOnce({
         name: user.name,
         ...user.facebook,
-      } as FacebookAccountInfo);
+      } as ThirdPartyAccountInfo);
 
       try {
         await service.connectFacebook(user._id, 'valid-facebook-access-token');
@@ -1349,7 +1348,7 @@ describe('AuthService', () => {
         .mockResolvedValueOnce({
           name: user.name,
           ...user.facebook,
-        } as FacebookAccountInfo);
+        } as ThirdPartyAccountInfo);
 
       const spyUserServiceFindOneAndUpdate = jest
         .spyOn(userService, 'findOneAndUpdate')

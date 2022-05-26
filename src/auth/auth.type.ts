@@ -24,3 +24,9 @@ export enum AccountType {
   Facebook = 'facebook',
   Google = 'google',
 }
+
+export type ThirdPartyAccountInfo = {
+  id: string;
+  name: string;
+  email: string;
+};

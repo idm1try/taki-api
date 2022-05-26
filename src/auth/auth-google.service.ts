@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Auth, google } from 'googleapis';
-import { GoogleAccountInfo } from './auth-google.type';
+import { ThirdPartyAccountInfo } from './auth.type';
 
 @Injectable()
 export class AuthGoogleService {
@@ -19,7 +19,9 @@ export class AuthGoogleService {
     this.oauthClient = new google.auth.OAuth2(this.clientId, this.clientSecret);
   }
 
-  public async verify(token: string): Promise<GoogleAccountInfo | undefined> {
+  public async verify(
+    token: string,
+  ): Promise<ThirdPartyAccountInfo | undefined> {
     try {
       this.oauthClient.setCredentials({
         access_token: token,
@@ -32,7 +34,7 @@ export class AuthGoogleService {
 
       // Revoke google access token, using only one time to get userInfo
       await this.oauthClient.revokeToken(token);
-      return userResponse.data as GoogleAccountInfo;
+      return userResponse.data as ThirdPartyAccountInfo;
     } catch (error) {
       return undefined;
     }

@@ -16,7 +16,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { RequestWithParsedPayload } from '../auth/auth.type';
-import { JwtAccessGuard } from '../auth/guard/jwt-access.guard';
+import { JwtAccessGuard } from '../common/guards';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { DeleteManyNotesDto } from './dto/delete-many-notes.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
@@ -24,11 +24,11 @@ import { NoteService } from './note.service';
 
 @ApiTags('notes')
 @Controller('notes')
+@UseGuards(JwtAccessGuard)
 export class NoteController {
   constructor(private readonly noteService: NoteService) {}
 
   @Post()
-  @UseGuards(JwtAccessGuard)
   @HttpCode(HttpStatus.OK)
   create(
     @Req() req: RequestWithParsedPayload,
@@ -38,7 +38,6 @@ export class NoteController {
   }
 
   @Get()
-  @UseGuards(JwtAccessGuard)
   @HttpCode(HttpStatus.OK)
   getAll(
     @Req() req: RequestWithParsedPayload,
@@ -49,14 +48,12 @@ export class NoteController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAccessGuard)
   @HttpCode(HttpStatus.OK)
   deleteOne(@Req() req: RequestWithParsedPayload, @Param('id') id: string) {
     return this.noteService.deleteOne(req.user.userId, id);
   }
 
   @Delete()
-  @UseGuards(JwtAccessGuard)
   @HttpCode(HttpStatus.OK)
   deleteMany(
     @Req() req: RequestWithParsedPayload,
@@ -69,7 +66,6 @@ export class NoteController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAccessGuard)
   @HttpCode(HttpStatus.OK)
   update(
     @Req() req: RequestWithParsedPayload,

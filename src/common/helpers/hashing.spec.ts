@@ -1,4 +1,4 @@
-import { Hashing } from './hashing.util';
+import { Hashing } from './hashing.helper';
 
 describe('Hasing', () => {
   describe('createHash', () => {
