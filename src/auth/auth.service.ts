@@ -9,15 +9,15 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { AuthFacebookService } from './auth-facebook.service';
-import { AuthGoogleService } from './auth-google.service';
+import { Hashing } from '../common/helpers';
 import { APIResponse } from '../common/types';
 import { KeyService } from '../key/key.service';
 import { MailService } from '../mail/mail.service';
 import { UserProfileSerialization } from '../user/serialization/user-profile.serialization';
 import { User } from '../user/user.schema';
 import { UserService } from '../user/user.service';
-import { Hashing } from '../common/helpers';
+import { AuthFacebookService } from './auth-facebook.service';
+import { AuthGoogleService } from './auth-google.service';
 import { AccountType, Payload, Tokens } from './auth.type';
 import { DeleteAccountDto } from './dto/delete-account.dto';
 import { SigninEmailDto } from './dto/signin-email.dto';

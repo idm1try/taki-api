@@ -3,18 +3,17 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { createMockFromClass } from '../../test/utils/createMockFromClass';
-import { AuthFacebookService } from './auth-facebook.service';
-import { AuthGoogleService } from './auth-google.service';
-import { ThirdPartyAccountInfo } from './auth.type';
+import { Hashing } from '../common/helpers';
 import { Key } from '../key/key.schema';
 import { KeyService } from '../key/key.service';
 import { MailService } from '../mail/mail.service';
 import { UserProfileSerialization } from '../user/serialization/user-profile.serialization';
 import { User } from '../user/user.schema';
 import { UserService } from '../user/user.service';
-import { Hashing } from '../common/helpers';
+import { AuthFacebookService } from './auth-facebook.service';
+import { AuthGoogleService } from './auth-google.service';
 import { AuthService } from './auth.service';
-import { AccountType } from './auth.type';
+import { AccountType, ThirdPartyAccountInfo } from './auth.type';
 
 const createUserDoc = (override: Partial<User> = {}): Partial<User> => ({
   _id: '1',
