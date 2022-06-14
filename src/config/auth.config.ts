@@ -7,11 +7,11 @@ export default registerAs('auth', () => ({
     refreshSecret: process.env.JWT_REFRESH_SECRET,
   },
   google: {
-    clientId: process.env.GOOGLE_CLIENT_ID,
+    clientId: process.env.GOOGLE_CLIENTID,
     clientSecret: process.env.GOOGLE_SECRET,
   },
   facebook: {
-    clientId: process.env.GOOGLE_CLIENT_ID,
+    clientId: process.env.GOOGLE_CLIENTID,
     clientSecret: process.env.GOOGLE_SECRET,
   },
 }));

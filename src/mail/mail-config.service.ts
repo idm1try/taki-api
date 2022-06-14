@@ -11,11 +11,15 @@ export class MailConfigService implements MailerOptionsFactory {
   createMailerOptions(): MailerOptions | Promise<MailerOptions> {
     return {
       transport: {
-        host: this.configService.get('mail.host'),
-        port: this.configService.get('mail.port'),
+        host: this.configService.get<string>('mail.host'),
+        port: this.configService.get<string>('mail.port'),
         auth: {
-          user: this.configService.get('mail.user'),
-          pass: this.configService.get('mail.pass'),
+          type: 'OAuth2',
+          user: this.configService.get<string>('mail.mail'),
+          accessToken: this.configService.get<string>('mail.accessToken'),
+          clientId: this.configService.get<string>('mail.clientId'),
+          clientSecret: this.configService.get<string>('mail.secret'),
+          refreshToken: this.configService.get<string>('mail.refreshToken'),
         },
       },
       template: {
