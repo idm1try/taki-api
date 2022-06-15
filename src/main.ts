@@ -2,6 +2,7 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -15,6 +16,7 @@ async function bootstrap() {
     credentials: true,
     origin: configService.get('app.clientOrigin'),
   });
+  app.use(cookieParser());
   app.use(helmet());
   app.setGlobalPrefix(globalPrefix);
   app.useGlobalPipes(new ValidationPipe());

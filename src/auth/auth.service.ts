@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { Request, Response } from 'express';
 import { Hashing } from '../common/helpers';
 import { APIResponse } from '../common/types';
 import { KeyService } from '../key/key.service';
@@ -18,7 +19,13 @@ import { User } from '../user/user.schema';
 import { UserService } from '../user/user.service';
 import { AuthFacebookService } from './auth-facebook.service';
 import { AuthGoogleService } from './auth-google.service';
-import { AccountType, Payload, Tokens } from './auth.type';
+import {
+  AccountType,
+  Payload,
+  Tokens,
+  DecodedToken,
+  UserProfileSerializated,
+} from './auth.type';
 import { DeleteAccountDto } from './dto/delete-account.dto';
 import { SigninEmailDto } from './dto/signin-email.dto';
 import { SignupDto } from './dto/signup.dto';
@@ -51,7 +58,10 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  public async signup(signupDto: SignupDto): APIResponse<Tokens> {
+  public async signup(
+    signupDto: SignupDto,
+    response: Response,
+  ): APIResponse<{ user: UserProfileSerializated; tokens: Tokens }> {
     const foundUsers = await this.userService.findOne({
       email: signupDto.email,
     });
@@ -75,14 +85,23 @@ export class AuthService {
 
     await this.mailService.signupSuccess(user.email, user.name);
 
-    return tokens;
+    response.cookie('refreshToken', tokens.refreshToken, {
+      httpOnly: true,
+      path: '/api/auth/refresh',
+    });
+
+    const userInfo = await this.userService.getUserInfo(user._id);
+
+    return { user: userInfo, tokens };
   }
 
-  public async signin(signinEmailDto: SigninEmailDto): APIResponse<Tokens> {
+  public async signin(
+    signinEmailDto: SigninEmailDto,
+    response: Response,
+  ): APIResponse<{ user: UserProfileSerializated; tokens: Tokens }> {
     const user = await this.userService.findOne({
       email: signinEmailDto.email,
     });
-
     if (!user) {
       throw new BadRequestException('Email is not exist');
     }
@@ -91,7 +110,6 @@ export class AuthService {
       user.password,
       signinEmailDto.password,
     );
-
     if (!isMatchedPassword) {
       throw new BadRequestException('Incorrect password');
     }
@@ -107,16 +125,34 @@ export class AuthService {
       },
     );
 
-    return tokens;
+    response.cookie('refreshToken', tokens.refreshToken, {
+      httpOnly: true,
+      path: '/api/auth/refresh',
+    });
+
+    const userInfo = await this.userService.getUserInfo(user._id);
+
+    return { user: userInfo, tokens };
   }
 
   public async refreshTokens(
-    userId: string,
-    refreshToken: string,
-  ): APIResponse<Tokens> {
-    const user = await this.userService.findOne({ _id: userId });
+    request: Request,
+    response: Response,
+  ): Promise<any> {
+    const refreshToken = request.cookies.refreshToken as string;
+    if (!refreshToken) {
+      throw new UnauthorizedException('Required refreshToken');
+    }
+
+    const decodedRefreshToken = this.jwtService.decode(
+      refreshToken,
+    ) as DecodedToken;
+
+    const user = await this.userService.findOne({
+      _id: decodedRefreshToken.userId,
+    });
     if (!user || !user.refreshToken) {
-      throw new UnauthorizedException('Access denied');
+      throw new UnauthorizedException('Invalid refreshToken');
     }
 
     const isRefreshTokenMatch = await Hashing.verify(
@@ -138,8 +174,14 @@ export class AuthService {
         refreshToken: tokens.refreshToken,
       },
     );
+    response.cookie('refreshToken', tokens.refreshToken, {
+      httpOnly: true,
+      path: '/api/auth/refresh',
+    });
 
-    return tokens;
+    const userInfo = await this.userService.getUserInfo(user._id);
+
+    return { user: userInfo, tokens };
   }
 
   public async accountInfo(

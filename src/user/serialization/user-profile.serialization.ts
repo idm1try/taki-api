@@ -15,4 +15,7 @@ export class UserProfileSerialization {
 
   @Exclude()
   readonly refreshToken: string;
+
+  @Exclude()
+  readonly __v: string;
 }

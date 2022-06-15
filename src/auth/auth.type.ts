@@ -30,3 +30,18 @@ export type ThirdPartyAccountInfo = {
   name: string;
   email: string;
 };
+
+export type DecodedToken = {
+  userId: string;
+  iat: number;
+  exp: number;
+};
+
+export type UserProfileSerializated = {
+  _id: string;
+  name: string;
+  email?: string;
+  isVerify?: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
