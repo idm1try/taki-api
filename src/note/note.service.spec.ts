@@ -107,7 +107,6 @@ describe('NotesService', () => {
         await service.deleteOne('not-exist-userid-1', 'noteid-1');
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
-        expect(error.message).toEqual('Note not found to delete');
       }
     });
 
@@ -135,7 +134,6 @@ describe('NotesService', () => {
         ]);
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
-        expect(error.message).toEqual('Notes not found to delete');
       }
     });
 
@@ -160,7 +158,6 @@ describe('NotesService', () => {
         await service.update('userid-1', 'noteid-1', {});
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
-        expect(error.message).toEqual('Nothing new to update');
       }
     });
 

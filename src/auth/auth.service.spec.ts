@@ -151,7 +151,6 @@ describe('AuthService', () => {
         );
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.CONFLICT);
-        expect(error.message).toEqual('Email is already used');
       }
     });
 
@@ -265,7 +264,6 @@ describe('AuthService', () => {
         );
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.BAD_REQUEST);
-        expect(error.message).toEqual('Email is not exist');
       }
     });
 
@@ -294,7 +292,6 @@ describe('AuthService', () => {
         );
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.BAD_REQUEST);
-        expect(error.message).toEqual('Incorrect password');
       }
     });
 
@@ -370,7 +367,6 @@ describe('AuthService', () => {
         await service.refreshTokens(mockRequest, mockResponse);
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.UNAUTHORIZED);
-        expect(error.message).toEqual('Required refreshToken');
       }
     });
 
@@ -393,7 +389,6 @@ describe('AuthService', () => {
         await service.refreshTokens(mockRequest, mockResponse);
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.UNAUTHORIZED);
-        expect(error.message).toEqual('Invalid refreshToken');
       }
     });
 
@@ -416,7 +411,6 @@ describe('AuthService', () => {
         await service.refreshTokens(mockRequest, mockResponse);
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.UNAUTHORIZED);
-        expect(error.message).toEqual('Invalid refreshToken');
       }
     });
 
@@ -503,7 +497,6 @@ describe('AuthService', () => {
         await service.accountInfo('not-exist-id');
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.FORBIDDEN);
-        expect(error.message).toEqual('Invalid accessToken');
       }
     });
 
@@ -589,7 +582,6 @@ describe('AuthService', () => {
         });
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.NOT_FOUND);
-        expect(error.message).toEqual('User is not exist');
       }
     });
 
@@ -610,7 +602,6 @@ describe('AuthService', () => {
         });
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.FORBIDDEN);
-        expect(error.message).toEqual('Password does not match');
       }
     });
 
@@ -654,7 +645,6 @@ describe('AuthService', () => {
         await service.verifyEmail('9');
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.NOT_FOUND);
-        expect(error.message).toEqual('User is not exist');
       }
     });
 
@@ -666,7 +656,6 @@ describe('AuthService', () => {
         await service.verifyEmail(user._id);
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.CONFLICT);
-        expect(error.message).toEqual('Account not had email to verify');
       }
     });
 
@@ -679,7 +668,6 @@ describe('AuthService', () => {
         await service.verifyEmail(user._id);
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.CONFLICT);
-        expect(error.message).toEqual('User is already verify');
       }
     });
 
@@ -719,7 +707,6 @@ describe('AuthService', () => {
         await service.confirmVerifyEmail('invalid-key');
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
-        expect(error.message).toEqual('verifyKey is expired or invalid');
       }
     });
 
@@ -760,7 +747,6 @@ describe('AuthService', () => {
         await service.signout('9');
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.UNAUTHORIZED);
-        expect(error.message).toEqual('Invalid accessToken');
       }
     });
 
@@ -789,7 +775,6 @@ describe('AuthService', () => {
         await service.forgotPassword(invalidEmail);
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.NOT_FOUND);
-        expect(error.message).toEqual('Email is not exist');
       }
     });
 
@@ -802,7 +787,6 @@ describe('AuthService', () => {
         await service.forgotPassword(user.email);
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
-        expect(error.message).toEqual('Email is not verified');
       }
     });
 
@@ -818,7 +802,6 @@ describe('AuthService', () => {
         await service.forgotPassword(user.email);
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
-        expect(error.message).toEqual('Reset password email is already sent');
       }
     });
 
@@ -854,9 +837,6 @@ describe('AuthService', () => {
         await service.resetPassword('invalid-key', 'new-password');
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
-        expect(error.message).toEqual(
-          'forgotPasswordKey is expired or invalid',
-        );
       }
     });
 
@@ -875,9 +855,6 @@ describe('AuthService', () => {
         await service.resetPassword('valid-key', 'new-password');
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
-        expect(error.message).toEqual(
-          'forgotPasswordKey is expired or invalid',
-        );
       }
     });
 
@@ -923,7 +900,6 @@ describe('AuthService', () => {
         await service.updateAccountInfo('1', {});
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
-        expect(error.message).toEqual('Nothing new to update');
       }
     });
 
@@ -936,7 +912,6 @@ describe('AuthService', () => {
         await service.updateAccountInfo(user._id, { email: user.email });
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
-        expect(error.message).toEqual('New email is same as your old email');
       }
     });
 
@@ -949,9 +924,6 @@ describe('AuthService', () => {
         await service.updateAccountInfo('1', { email: user.email });
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.CONFLICT);
-        expect(error.message).toEqual(
-          'New email is being used by another account',
-        );
       }
     });
 
@@ -997,7 +969,6 @@ describe('AuthService', () => {
         await service.googleSignIn('invalid-google-access-token');
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.BAD_REQUEST);
-        expect(error.message).toEqual('Google accessToken invalid');
       }
     });
 
@@ -1145,9 +1116,6 @@ describe('AuthService', () => {
         await service.connectGoogle(user._id, 'valid-google-access-token');
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.CONFLICT);
-        expect(error.message).toEqual(
-          'Your account already connect with Google',
-        );
       }
     });
 
@@ -1166,7 +1134,6 @@ describe('AuthService', () => {
         await service.connectGoogle(user._id, 'invalid-google-access-token');
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.BAD_REQUEST);
-        expect(error.message).toEqual('Google accessToken invalid');
       }
     });
 
@@ -1185,9 +1152,6 @@ describe('AuthService', () => {
         await service.connectGoogle(user._id, 'valid-google-access-token');
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.BAD_REQUEST);
-        expect(error.message).toEqual(
-          'This Google account is being connected to another account',
-        );
       }
     });
 
@@ -1240,7 +1204,6 @@ describe('AuthService', () => {
         await service.facebookSignIn('invalid-facebook-access-token');
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.BAD_REQUEST);
-        expect(error.message).toEqual('Facebook accessToken invalid');
       }
     });
 
@@ -1394,9 +1357,6 @@ describe('AuthService', () => {
         await service.connectFacebook(user._id, 'valid-facebook-access-token');
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.CONFLICT);
-        expect(error.message).toEqual(
-          'Your account already connect with Facebook',
-        );
       }
     });
 
@@ -1420,7 +1380,6 @@ describe('AuthService', () => {
         );
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.BAD_REQUEST);
-        expect(error.message).toEqual('Facebook accessToken invalid');
       }
     });
 
@@ -1439,9 +1398,6 @@ describe('AuthService', () => {
         await service.connectFacebook(user._id, 'valid-facebook-access-token');
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.BAD_REQUEST);
-        expect(error.message).toEqual(
-          'This Facebook account is being connected to another account',
-        );
       }
     });
 
@@ -1491,9 +1447,6 @@ describe('AuthService', () => {
         });
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.CONFLICT);
-        expect(error.message).toEqual(
-          'Your account already connect with email',
-        );
       }
     });
 
@@ -1510,9 +1463,6 @@ describe('AuthService', () => {
         });
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.BAD_REQUEST);
-        expect(error.message).toEqual(
-          'This Email is being connected to another account',
-        );
       }
     });
 
@@ -1552,7 +1502,6 @@ describe('AuthService', () => {
         await service.unlinkAccount('1', AccountType.Email);
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.FORBIDDEN);
-        expect(error.message).toEqual('accessToken is not valid');
       }
     });
 
@@ -1565,7 +1514,6 @@ describe('AuthService', () => {
         await service.unlinkAccount(user._id, AccountType.Email);
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
-        expect(error.message).toEqual('Account need atleast 1 sign method');
       }
     });
 

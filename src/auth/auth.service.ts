@@ -67,7 +67,7 @@ export class AuthService {
     });
 
     if (foundUsers) {
-      throw new ConflictException('Email is already used');
+      throw new ConflictException({ email: ['Email is already used'] });
     }
 
     const user = await this.userService.create(signupDto);
@@ -103,7 +103,7 @@ export class AuthService {
       email: signinEmailDto.email,
     });
     if (!user) {
-      throw new BadRequestException('Email is not exist');
+      throw new BadRequestException({ email: ['Email is not exist'] });
     }
 
     const isMatchedPassword = await Hashing.verify(
@@ -111,7 +111,7 @@ export class AuthService {
       signinEmailDto.password,
     );
     if (!isMatchedPassword) {
-      throw new BadRequestException('Incorrect password');
+      throw new BadRequestException({ password: ['Incorrect password'] });
     }
 
     const tokens = await this.generateTokens({

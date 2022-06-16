@@ -107,7 +107,6 @@ describe('TasksService', () => {
         await service.deleteOne('not-exist-userid-1', 'taskid-1');
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
-        expect(error.message).toEqual('Task not found to delete');
       }
     });
 
@@ -135,7 +134,6 @@ describe('TasksService', () => {
         ]);
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
-        expect(error.message).toEqual('Tasks not found to delete');
       }
     });
 
@@ -160,7 +158,6 @@ describe('TasksService', () => {
         await service.update('userid-1', 'taskid-1', {});
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
-        expect(error.message).toEqual('Nothing new to update');
       }
     });
 

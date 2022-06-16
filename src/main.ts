@@ -2,10 +2,13 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ValidationError } from 'class-validator';
 import * as cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { ValidationException } from './common/exceptions/validation.exeption';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { ValidationExceptionFilter } from './common/filters/validation-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -19,8 +22,25 @@ async function bootstrap() {
   app.use(cookieParser());
   app.use(helmet());
   app.setGlobalPrefix(globalPrefix);
-  app.useGlobalPipes(new ValidationPipe());
-  app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      skipMissingProperties: true,
+      exceptionFactory: (errors: ValidationError[]) =>
+        new ValidationException(
+          errors.reduce(
+            (o, error) => ({
+              ...o,
+              [error.property]: Object.values(error.constraints),
+            }),
+            {},
+          ),
+        ),
+    }),
+  );
+  app.useGlobalFilters(
+    new HttpExceptionFilter(),
+    new ValidationExceptionFilter(),
+  );
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Todo API')
