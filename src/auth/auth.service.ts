@@ -83,7 +83,7 @@ export class AuthService {
       },
     );
 
-    await this.mailService.signupSuccess(user.email, user.name);
+    this.mailService.signupSuccess(user.email, user.name);
 
     response.cookie('refreshToken', tokens.refreshToken, {
       httpOnly: true,
@@ -256,8 +256,12 @@ export class AuthService {
       throw new ConflictException('User is already verify');
     }
 
-    const verifyKey = await this.keyService.create(user._id);
-    await this.mailService.verifyEmail(user.email, verifyKey.key, user.name);
+    try {
+      const verifyKey = await this.keyService.create(user.email);
+      await this.mailService.verifyEmail(user.email, verifyKey.key, user.name);
+    } catch (error) {
+      throw new NotAcceptableException('Reset password email is already sent');
+    }
   }
 
   public async confirmVerifyEmail(key: string): APIResponse<void> {
@@ -267,7 +271,7 @@ export class AuthService {
     }
 
     const user = await this.userService.findOneAndUpdate(
-      { _id: verifyKey.user._id },
+      { email: verifyKey.email },
       { isVerify: true },
     );
 
@@ -301,7 +305,7 @@ export class AuthService {
     }
 
     try {
-      const forgotPassword = await this.keyService.create(user._id);
+      const forgotPassword = await this.keyService.create(email);
       await this.mailService.forgotPassword(
         user.email,
         forgotPassword.key,
@@ -324,7 +328,7 @@ export class AuthService {
     }
 
     const user = await this.userService.findOneAndUpdate(
-      { _id: forgotPassword.user._id },
+      { email: forgotPassword.email },
       { password: newPassword, refreshToken: null },
     );
 

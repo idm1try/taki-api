@@ -1,15 +1,14 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Document } from 'mongoose';
 import { Hashing } from '../common/helpers';
-import { User } from '../user/user.schema';
 
 @Schema({ timestamps: true })
 export class Key extends Document {
   @Prop({ required: false, unique: true })
   key?: string;
 
-  @Prop({ type: Types.ObjectId, unique: true, required: true, ref: User.name })
-  user: User;
+  @Prop({ unique: true, required: true })
+  email: string;
 }
 
 const KeySchema = SchemaFactory.createForClass(Key);

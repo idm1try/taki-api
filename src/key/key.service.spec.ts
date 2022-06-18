@@ -56,10 +56,10 @@ describe('KeysService', () => {
         .spyOn(model, 'create')
         .mockResolvedValueOnce(mockForgotDoc() as never);
 
-      const result = await service.create('1');
+      const result = await service.create('test@gmail.com');
       expect(result).toEqual(mockForgotDoc());
       expect(spyModelCreate).toBeCalledWith({
-        user: '1',
+        email: 'test@gmail.com',
       });
     });
   });

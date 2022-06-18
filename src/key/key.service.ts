@@ -7,9 +7,9 @@ import { Key } from './key.schema';
 export class KeyService {
   constructor(@InjectModel(Key.name) private keyModel: Model<Key>) {}
 
-  public async create(userId: string): Promise<Key> {
+  public async create(email: string): Promise<Key> {
     return this.keyModel.create({
-      user: userId,
+      email,
     });
   }
 

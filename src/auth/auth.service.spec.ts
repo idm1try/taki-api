@@ -682,7 +682,7 @@ describe('AuthService', () => {
         .mockResolvedValueOnce({
           id: '2',
           key: 'verify-key',
-          user: user,
+          email: user.email,
         } as Key);
 
       const spyMailVerifyEmail = jest.spyOn(mailService, 'verifyEmail');
@@ -690,7 +690,7 @@ describe('AuthService', () => {
       await service.verifyEmail(user._id);
 
       expect(spyUserServiceFindOne).toBeCalledWith({ _id: user._id });
-      expect(spyKeyServiceCreate).toBeCalledWith(user._id);
+      expect(spyKeyServiceCreate).toBeCalledWith(user.email);
       expect(spyMailVerifyEmail).toBeCalledWith(
         user.email,
         'verify-key',
@@ -717,7 +717,7 @@ describe('AuthService', () => {
         .mockResolvedValueOnce({
           _id: '1',
           key: 'valid-key',
-          user: user,
+          email: user.email,
         } as Key);
       const spyUserServiceFindOneAndUpdate = jest
         .spyOn(userService, 'findOneAndUpdate')
@@ -730,7 +730,7 @@ describe('AuthService', () => {
       await service.confirmVerifyEmail('valid-key');
       expect(spyKeyServiceVerify).toBeCalledWith('valid-key');
       expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
-        { _id: user._id },
+        { email: user.email },
         { isVerify: true },
       );
       expect(spyMailVerifyEmailSuccess).toBeCalledWith(user.email, user.name);
@@ -815,7 +815,7 @@ describe('AuthService', () => {
 
       const spyForgotCreate = jest
         .spyOn(keyService, 'create')
-        .mockResolvedValueOnce({ key: 'reset-key', user: user } as Key);
+        .mockResolvedValueOnce({ key: 'reset-key', email: user.email } as Key);
 
       await service.forgotPassword(user.email);
 
@@ -825,7 +825,7 @@ describe('AuthService', () => {
         'reset-key',
         user.name,
       );
-      expect(spyForgotCreate).toBeCalledWith(user._id);
+      expect(spyForgotCreate).toBeCalledWith(user.email);
     });
   });
 
@@ -844,7 +844,7 @@ describe('AuthService', () => {
       const user = createUserDoc({ email: 'test@gmail.com', isVerify: true });
       jest.spyOn(keyService, 'verify').mockResolvedValueOnce({
         key: 'valid-key',
-        user,
+        email: user.email,
       } as Key);
 
       jest
@@ -864,7 +864,7 @@ describe('AuthService', () => {
         .spyOn(keyService, 'verify')
         .mockResolvedValueOnce({
           key: 'valid-key',
-          user,
+          email: user.email,
         } as Key);
 
       const spyUserServiceFindOneAndUpdate = jest
@@ -886,7 +886,7 @@ describe('AuthService', () => {
 
       expect(spyForgotVerify).toBeCalledWith('valid-key');
       expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
-        { _id: user._id },
+        { email: user.email },
         { password: 'new-password', refreshToken: null },
       );
       expect(spyForgotRevoke).toBeCalledWith('valid-key');
