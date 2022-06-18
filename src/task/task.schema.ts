@@ -11,8 +11,8 @@ export class Task extends Document {
   @Prop({ required: false })
   desc?: string;
 
-  @Prop({ type: Types.ObjectId, ref: User.name, required: true })
-  user: User;
+  @Prop({ types: Types.ObjectId, ref: User.name, required: true })
+  user: string;
 
   @Prop({ required: false, default: false })
   isDone?: boolean;

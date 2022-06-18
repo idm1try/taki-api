@@ -11,7 +11,7 @@ export class Note extends Document {
   content?: string;
 
   @Prop({ type: Types.ObjectId, ref: User.name, required: true })
-  user: User;
+  user: string;
 }
 
 const NoteSchema = SchemaFactory.createForClass(Note);

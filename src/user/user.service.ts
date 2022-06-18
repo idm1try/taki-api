@@ -38,7 +38,7 @@ export class UserService {
     return plainToInstance(UserProfileSerialization, user);
   }
 
-  public async delete(userId: string): Promise<User | undefined> {
+  public async delete(userId: string): Promise<User> {
     return this.userModel.findOneAndDelete({ _id: userId }).exec();
   }
 }
