@@ -14,12 +14,10 @@ export class TaskService {
     userId: string,
     createTaskDto: CreateTaskDto,
   ): APIResponse<Task> {
-    const task = await this.taskModel.create({
+    return this.taskModel.create({
       ...createTaskDto,
       user: userId,
     });
-
-    return task;
   }
 
   public async getAll(

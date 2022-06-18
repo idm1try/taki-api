@@ -14,12 +14,10 @@ export class NoteService {
     userId: string,
     createNoteDto: CreateNoteDto,
   ): APIResponse<Note> {
-    const note = await this.noteModel.create({
+    return this.noteModel.create({
       ...createNoteDto,
       user: userId,
     });
-
-    return note;
   }
 
   public async getAll(
