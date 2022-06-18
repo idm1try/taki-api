@@ -16,7 +16,6 @@ import { UserModule } from './user/user.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: [`.env.${process.env.NODE_ENV}`],
       load: [appConfig, mongoConfig, authConfig, mailConfig],
     }),
     MongooseModule.forRootAsync({
