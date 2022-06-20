@@ -7,6 +7,7 @@ import * as cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { ValidationException } from './common/exceptions/validation.exeption';
+import { AllExceptionsFilter } from './common/filters/all-exception.filter';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ValidationExceptionFilter } from './common/filters/validation-exception.filter';
 
@@ -38,8 +39,9 @@ async function bootstrap() {
     }),
   );
   app.useGlobalFilters(
-    new HttpExceptionFilter(),
+    new AllExceptionsFilter(),
     new ValidationExceptionFilter(),
+    new HttpExceptionFilter(),
   );
 
   const swaggerConfig = new DocumentBuilder()

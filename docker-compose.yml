@@ -4,11 +4,11 @@ services:
   mongo:
     image: mongo:5.0.6-focal
     environment:
-      MONGO_INITDB_ROOT_USERNAME: $MONGO_USERNAME
-      MONGO_INITDB_ROOT_PASSWORD: $MONGO_PASSWORD
-      MONGO_INITDB_DATABASE: $MONGO_NAME
+      MONGO_INITDB_ROOT_USERNAME: dev
+      MONGO_INITDB_ROOT_PASSWORD: secret
+      MONGO_INITDB_DATABASE: taki-dev-db
     ports:
-      - '$MONGO_PORT:$MONGO_PORT'
+      - '27017:27017'
     networks:
       - app-mongo
     restart: always
