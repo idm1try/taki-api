@@ -174,7 +174,7 @@ describe('MailService', () => {
         hasAction: true,
         url: `${configService.get(
           'mail.callbackResetUrl',
-        )}?forgotPasswordKey=${mockResetPasswordKey}`,
+        )}?resetPasswordKey=${mockResetPasswordKey}`,
         buttonLabel: 'Reset Password',
       },
     });

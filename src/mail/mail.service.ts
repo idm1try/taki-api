@@ -141,7 +141,7 @@ export class MailService {
         hasAction: true,
         url: `${this.configService.get(
           'mail.callbackResetUrl',
-        )}?forgotPasswordKey=${key}`,
+        )}?resetPasswordKey=${key}`,
         buttonLabel: 'Reset Password',
       },
     });

@@ -317,13 +317,13 @@ export class AuthService {
   }
 
   public async resetPassword(
-    forgotPasswordKey: string,
+    resetPasswordKey: string,
     newPassword: string,
   ): APIResponse<void> {
-    const forgotPassword = await this.keyService.verify(forgotPasswordKey);
+    const forgotPassword = await this.keyService.verify(resetPasswordKey);
     if (!forgotPassword) {
       throw new NotAcceptableException(
-        'forgotPasswordKey is expired or invalid',
+        'resetPasswordKey is expired or invalid',
       );
     }
 
@@ -334,11 +334,11 @@ export class AuthService {
 
     if (!user) {
       throw new NotAcceptableException(
-        'forgotPasswordKey is expired or invalid',
+        'resetPasswordKey is expired or invalid',
       );
     }
 
-    await this.keyService.revoke(forgotPasswordKey);
+    await this.keyService.revoke(resetPasswordKey);
     await this.mailService.resetPasswordSuccess(user.email, user.name);
   }
 
