@@ -43,8 +43,8 @@ async function bootstrap() {
   );
 
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('Todo API')
-    .setDescription('Documents for TodoAPI')
+    .setTitle('Taki API')
+    .setDescription('Documents for Taki API')
     .setVersion('1.0')
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
