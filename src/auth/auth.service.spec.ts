@@ -263,7 +263,7 @@ describe('AuthService', () => {
           mockResponse,
         );
       } catch (error) {
-        expect(error.status).toEqual(HttpStatus.BAD_REQUEST);
+        expect(error.status).toEqual(HttpStatus.NOT_FOUND);
       }
     });
 
