@@ -18,7 +18,6 @@ specifiers:
   '@nestjs/schematics': ^8.0.11
   '@nestjs/swagger': ^5.2.1
   '@nestjs/testing': ^8.4.6
-  '@types/cookie-parser': ^1.4.3
   '@types/express': ^4.17.13
   '@types/facebook-js-sdk': ^3.3.5
   '@types/jest': 27.4.1
@@ -30,7 +29,6 @@ specifiers:
   argon2: ^0.28.5
   class-transformer: ^0.5.1
   class-validator: ^0.13.2
-  cookie-parser: ^1.4.6
   eslint: ^8.17.0
   eslint-config-prettier: ^8.5.0
   eslint-plugin-prettier: ^4.0.0
@@ -70,7 +68,6 @@ dependencies:
   argon2: 0.28.5
   class-transformer: 0.5.1
   class-validator: 0.13.2
-  cookie-parser: 1.4.6
   fb: 2.0.0
   googleapis: 100.0.0
   helmet: 5.1.0
@@ -93,7 +90,6 @@ devDependencies:
   '@nestjs/cli': 8.2.6
   '@nestjs/schematics': 8.0.11_typescript@4.7.3
   '@nestjs/testing': 8.4.6_ao2apqzecfj6tlim53vr4xrmvq
-  '@types/cookie-parser': 1.4.3
   '@types/express': 4.17.13
   '@types/facebook-js-sdk': 3.3.5
   '@types/jest': 27.4.1
@@ -1431,12 +1427,6 @@ packages:
       '@types/node': 16.11.39
     dev: true
 
-  /@types/cookie-parser/1.4.3:
-    resolution: {integrity: sha512-CqSKwFwefj4PzZ5n/iwad/bow2hTCh0FlNAeWLtQM3JA/NX/iYagIpWG2cf1bQKQ2c9gU2log5VUCrn7LDOs0w==}
-    dependencies:
-      '@types/express': 4.17.13
-    dev: true
-
   /@types/cookiejar/2.1.2:
     resolution: {integrity: sha512-t73xJJrvdTjXrn4jLS9VSGRbz0nUY3cl2DMGDU48lKl+HR9dbbjW2A9r3g40VA++mQpy6uuHg33gy7du2BKpog==}
     dev: true
@@ -2682,21 +2672,8 @@ packages:
       safe-buffer: 5.1.2
     dev: true
 
-  /cookie-parser/1.4.6:
-    resolution: {integrity: sha512-z3IzaNjdwUC2olLIB5/ITd0/setiaFMLYiZJle7xg5Fe9KWAceil7xszYfHHBtDFYLSgJduS2Ty0P1uJdPDJeA==}
-    engines: {node: '>= 0.8.0'}
-    dependencies:
-      cookie: 0.4.1
-      cookie-signature: 1.0.6
-    dev: false
-
   /cookie-signature/1.0.6:
     resolution: {integrity: sha512-QADzlaHc8icV8I7vbaJXJwod9HWYp8uCqf1xa4OfNu1T7JVxQIrUgOWtHdNDtPiywmFbiS12VjotIXLrKM3orQ==}
-
-  /cookie/0.4.1:
-    resolution: {integrity: sha512-ZwrFkGJxUR3EIoXtO+yVE69Eb7KlixbaeAWfBQB9vVsNn/o+Yw69gBWSSDK825hQNdN+wF8zELf3dFNl/kxkUA==}
-    engines: {node: '>= 0.6'}
-    dev: false
 
   /cookie/0.5.0:
     resolution: {integrity: sha512-YZ3GUyn/o8gfKJlnlX7g7xq4gyO6OSuhGPKaaGssGB2qgDUS0gPgtTvoyZLTt9Ab6dC4hfc9dV5arkvc/OCmrw==}

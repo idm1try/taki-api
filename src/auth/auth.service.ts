@@ -9,9 +9,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Request, Response } from 'express';
 import { Hashing } from '../common/helpers';
-import { APIResponse } from '../common/types';
 import { KeyService } from '../key/key.service';
 import { MailService } from '../mail/mail.service';
 import { UserProfileSerialization } from '../user/serialization/user-profile.serialization';
@@ -23,7 +21,6 @@ import {
   AccountType,
   Payload,
   Tokens,
-  DecodedToken,
   UserProfileSerializated,
 } from './auth.type';
 import { DeleteAccountDto } from './dto/delete-account.dto';
@@ -43,11 +40,11 @@ export class AuthService {
     private readonly authFacebookService: AuthFacebookService,
   ) {}
 
-  public async generateTokens(payload: Payload): Promise<Tokens> {
+  public async signTokens(payload: Payload): Promise<Tokens> {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.sign(payload, {
         secret: this.configService.get('auth.jwt.accessSecret'),
-        expiresIn: 60 * 15,
+        expiresIn: 60 * 5,
       }),
       this.jwtService.sign(payload, {
         secret: this.configService.get('auth.jwt.refreshSecret'),
@@ -60,8 +57,7 @@ export class AuthService {
 
   public async signup(
     signupDto: SignupDto,
-    response: Response,
-  ): APIResponse<{ user: UserProfileSerializated; tokens: Tokens }> {
+  ): Promise<{ user: UserProfileSerializated; tokens: Tokens }> {
     const foundUsers = await this.userService.findOne({
       email: signupDto.email,
     });
@@ -72,7 +68,7 @@ export class AuthService {
 
     const user = await this.userService.create(signupDto);
 
-    const tokens = await this.generateTokens({
+    const tokens = await this.signTokens({
       userId: user._id,
     });
 
@@ -85,11 +81,6 @@ export class AuthService {
 
     this.mailService.signupSuccess(user.email, user.name);
 
-    response.cookie('refreshToken', tokens.refreshToken, {
-      httpOnly: true,
-      path: '/api/auth/refresh',
-    });
-
     const userInfo = await this.userService.getUserInfo(user._id);
 
     return { user: userInfo, tokens };
@@ -97,8 +88,7 @@ export class AuthService {
 
   public async signin(
     signinEmailDto: SigninEmailDto,
-    response: Response,
-  ): APIResponse<{ user: UserProfileSerializated; tokens: Tokens }> {
+  ): Promise<{ user: UserProfileSerializated; tokens: Tokens }> {
     const user = await this.userService.findOne({
       email: signinEmailDto.email,
     });
@@ -114,7 +104,7 @@ export class AuthService {
       throw new BadRequestException('Incorrect password');
     }
 
-    const tokens = await this.generateTokens({
+    const tokens = await this.signTokens({
       userId: user?._id,
     });
 
@@ -125,34 +115,18 @@ export class AuthService {
       },
     );
 
-    response.cookie('refreshToken', tokens.refreshToken, {
-      httpOnly: true,
-      path: '/api/auth/refresh',
-    });
-
     const userInfo = await this.userService.getUserInfo(user._id);
 
     return { user: userInfo, tokens };
   }
 
   public async refreshTokens(
-    request: Request,
-    response: Response,
-  ): Promise<any> {
-    const refreshToken = request.cookies.refreshToken as string;
-    if (!refreshToken) {
-      throw new UnauthorizedException('Required refreshToken');
-    }
-
-    const decodedRefreshToken = this.jwtService.decode(
-      refreshToken,
-    ) as DecodedToken;
-
-    const user = await this.userService.findOne({
-      _id: decodedRefreshToken.userId,
-    });
+    userId: string,
+    refreshToken: string,
+  ): Promise<{ tokens: Tokens }> {
+    const user = await this.userService.findOne({ _id: userId });
     if (!user || !user.refreshToken) {
-      throw new UnauthorizedException('Invalid refreshToken');
+      throw new UnauthorizedException('Access denied');
     }
 
     const isRefreshTokenMatch = await Hashing.verify(
@@ -164,7 +138,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refreshToken');
     }
 
-    const tokens = await this.generateTokens({
+    const tokens = await this.signTokens({
       userId: user._id,
     });
 
@@ -174,19 +148,11 @@ export class AuthService {
         refreshToken: tokens.refreshToken,
       },
     );
-    response.cookie('refreshToken', tokens.refreshToken, {
-      httpOnly: true,
-      path: '/api/auth/refresh',
-    });
 
-    const userInfo = await this.userService.getUserInfo(user._id);
-
-    return { user: userInfo, tokens };
+    return { tokens };
   }
 
-  public async accountInfo(
-    userId: string,
-  ): APIResponse<UserProfileSerialization> {
+  public async accountInfo(userId: string): Promise<UserProfileSerialization> {
     const user = await this.userService.getUserInfo(userId);
 
     if (!user) {
@@ -200,7 +166,7 @@ export class AuthService {
     userId: string,
     password: string,
     newPassword: string,
-  ): APIResponse<void> {
+  ): Promise<void> {
     const user = await this.userService.findOne({ _id: userId });
     const isMatchedPassword = await Hashing.verify(user.password, password);
 
@@ -222,7 +188,7 @@ export class AuthService {
   public async deleteAccount(
     userId: string,
     deleteAccountDto: DeleteAccountDto,
-  ): APIResponse<void> {
+  ): Promise<void> {
     const user = await this.userService.findOne({ _id: userId });
     if (!user) {
       throw new NotFoundException('User is not exist');
@@ -243,7 +209,7 @@ export class AuthService {
     );
   }
 
-  public async verifyEmail(userId: string): APIResponse<void> {
+  public async verifyEmail(userId: string): Promise<void> {
     const user = await this.userService.findOne({ _id: userId });
     if (!user) {
       throw new NotFoundException('User is not exist');
@@ -264,7 +230,7 @@ export class AuthService {
     }
   }
 
-  public async confirmVerifyEmail(key: string): APIResponse<void> {
+  public async confirmVerifyEmail(key: string): Promise<void> {
     const verifyKey = await this.keyService.verify(key);
     if (!verifyKey) {
       throw new NotAcceptableException('verifyKey is expired or invalid');
@@ -282,7 +248,7 @@ export class AuthService {
     await this.mailService.verifyEmailSuccess(user.email, user.name);
   }
 
-  public async signout(userId: string): APIResponse<void> {
+  public async signout(userId: string): Promise<void> {
     const user = await this.userService.findOneAndUpdate(
       { _id: userId, refreshToken: { $exists: true, $ne: null } },
       { refreshToken: null },
@@ -293,7 +259,7 @@ export class AuthService {
     }
   }
 
-  public async forgotPassword(email: string): APIResponse<void> {
+  public async forgotPassword(email: string): Promise<void> {
     const user = await this.userService.findOne({ email });
 
     if (!user) {
@@ -319,7 +285,7 @@ export class AuthService {
   public async resetPassword(
     resetPasswordKey: string,
     newPassword: string,
-  ): APIResponse<void> {
+  ): Promise<void> {
     const forgotPassword = await this.keyService.verify(resetPasswordKey);
     if (!forgotPassword) {
       throw new NotAcceptableException(
@@ -345,7 +311,7 @@ export class AuthService {
   public async updateAccountInfo(
     userId: string,
     updateAccountInfoDto: UpdateAccountDto,
-  ): APIResponse<void> {
+  ): Promise<void> {
     if (!Object.keys(updateAccountInfoDto)) {
       throw new NotAcceptableException('Nothing new to update');
     }
@@ -371,7 +337,7 @@ export class AuthService {
     );
   }
 
-  public async googleSignIn(googleAccessToken: string): APIResponse<Tokens> {
+  public async googleSignIn(googleAccessToken: string): Promise<Tokens> {
     const googleUserInfo = await this.authGoogleService.verify(
       googleAccessToken,
     );
@@ -393,7 +359,7 @@ export class AuthService {
         },
       });
 
-      const tokens = await this.generateTokens({
+      const tokens = await this.signTokens({
         userId: newUser._id,
       });
 
@@ -410,7 +376,7 @@ export class AuthService {
       return tokens;
     }
 
-    const tokens = await this.generateTokens({
+    const tokens = await this.signTokens({
       userId: user._id,
     });
 
@@ -427,7 +393,7 @@ export class AuthService {
   public async connectGoogle(
     userId: string,
     googleAccessToken: string,
-  ): APIResponse<void> {
+  ): Promise<void> {
     const user = await this.userService.findOne({ _id: userId });
     if (user?.google?.id) {
       throw new ConflictException('Your account already connect with Google');
@@ -456,9 +422,7 @@ export class AuthService {
     );
   }
 
-  public async facebookSignIn(
-    facebookAccessToken: string,
-  ): APIResponse<Tokens> {
+  public async facebookSignIn(facebookAccessToken: string): Promise<Tokens> {
     const facebookUserInfo = await this.authFacebookService.verify(
       facebookAccessToken,
     );
@@ -480,7 +444,7 @@ export class AuthService {
         },
       });
 
-      const tokens = await this.generateTokens({
+      const tokens = await this.signTokens({
         userId: newUser._id,
       });
 
@@ -500,7 +464,7 @@ export class AuthService {
       return tokens;
     }
 
-    const tokens = await this.generateTokens({
+    const tokens = await this.signTokens({
       userId: user._id,
     });
 
@@ -517,7 +481,7 @@ export class AuthService {
   public async connectFacebook(
     userId: string,
     facebookAccessToken: string,
-  ): APIResponse<void> {
+  ): Promise<void> {
     const user = await this.userService.findOne({ _id: userId });
     if (user?.facebook?.id) {
       throw new ConflictException('Your account already connect with Facebook');
@@ -548,7 +512,7 @@ export class AuthService {
   public async connectEmail(
     userId: string,
     connectEmailDto: SigninEmailDto,
-  ): APIResponse<void> {
+  ): Promise<void> {
     const user = await this.userService.findOne({ _id: userId });
     if (user?.email) {
       throw new ConflictException('Your account already connect with email');

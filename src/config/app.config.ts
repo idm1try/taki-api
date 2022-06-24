@@ -7,7 +7,6 @@ export default registerAs('app', () => ({
   scheme: process.env.SCHEME || 'http',
   host: process.env.HOST || 'localhost',
   port: parseInt(process.env.PORT) || 5000,
-  clientOrigin: process.env.CLIENT_ORIGIN,
   get domain() {
     return `${this.scheme}://${this.host}:${this.port}`;
   },
