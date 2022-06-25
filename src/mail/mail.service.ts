@@ -11,10 +11,11 @@ export class MailService {
 
   public async signupSuccess(email: string, name?: string): Promise<void> {
     return this.mailerService.sendMail({
+      from: this.configService.get<string>('mail.rootEmail'),
       to: email,
       text: 'Signup Account Success',
       subject: 'Signup Account Success',
-      template: '/main',
+      template: 'main',
       context: {
         title: 'Signup Account Success',
         logoUrl: this.configService.get('mail.logoUrl'),
@@ -34,10 +35,11 @@ export class MailService {
     name?: string,
   ): Promise<void> {
     return this.mailerService.sendMail({
+      from: this.configService.get<string>('mail.rootEmail'),
       to: email,
       text: 'Update Password Success',
       subject: 'Update Password Success',
-      template: '/main',
+      template: 'main',
       context: {
         title: 'Update Password Success',
         logoUrl: this.configService.get('mail.logoUrl'),
@@ -57,10 +59,11 @@ export class MailService {
     name?: string,
   ): Promise<void> {
     return this.mailerService.sendMail({
+      from: this.configService.get<string>('mail.rootEmail'),
       to: email,
       text: 'Deleted Account',
       subject: 'Deleted Account',
-      template: '/main',
+      template: 'main',
       context: {
         title: 'Deleted Account',
         logoUrl: this.configService.get('mail.logoUrl'),
@@ -81,10 +84,11 @@ export class MailService {
     name?: string,
   ): Promise<void> {
     return this.mailerService.sendMail({
+      from: this.configService.get<string>('mail.rootEmail'),
       to: email,
       text: 'Verify Email',
       subject: 'Verify Email',
-      template: '/main',
+      template: 'main',
       context: {
         title: 'Verify Email',
         logoUrl: this.configService.get('mail.logoUrl'),
@@ -104,10 +108,11 @@ export class MailService {
 
   public async verifyEmailSuccess(email: string, name?: string): Promise<void> {
     return this.mailerService.sendMail({
+      from: this.configService.get<string>('mail.rootEmail'),
       to: email,
       text: 'Verify Email Success',
       subject: 'Verify Email Success',
-      template: '/main',
+      template: 'main',
       context: {
         title: 'Verify Email Success',
         logoUrl: this.configService.get('mail.logoUrl'),
@@ -126,10 +131,11 @@ export class MailService {
     name?: string,
   ): Promise<void> {
     return this.mailerService.sendMail({
+      from: this.configService.get<string>('mail.rootEmail'),
       to: email,
       text: 'Reset Password',
       subject: 'Reset Password',
-      template: '/main',
+      template: 'main',
       context: {
         title: 'Reset Password',
         logoUrl: this.configService.get('mail.logoUrl'),
@@ -152,10 +158,11 @@ export class MailService {
     name?: string,
   ): Promise<void> {
     return this.mailerService.sendMail({
+      from: this.configService.get<string>('mail.rootEmail'),
       to: email,
       text: 'Reset Password Success',
       subject: 'Reset Password Success',
-      template: '/main',
+      template: 'main',
       context: {
         title: 'Reset Password Success',
         logoUrl: this.configService.get('mail.logoUrl'),
