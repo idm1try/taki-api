@@ -93,7 +93,9 @@ export class AuthService {
       email: signinEmailDto.email,
     });
     if (!user) {
-      throw new NotFoundException('Email is not exist');
+      throw new NotFoundException(
+        'There was a problem logging in. Check your email and password or create an account.',
+      );
     }
 
     const isMatchedPassword = await Hashing.verify(
@@ -101,7 +103,9 @@ export class AuthService {
       signinEmailDto.password,
     );
     if (!isMatchedPassword) {
-      throw new BadRequestException('Incorrect password');
+      throw new BadRequestException(
+        'There was a problem logging in. Check your email and password or create an account.',
+      );
     }
 
     const tokens = await this.signTokens({
