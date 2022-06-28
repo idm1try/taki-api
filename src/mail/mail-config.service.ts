@@ -10,7 +10,8 @@ export class MailConfigService implements MailerOptionsFactory {
   createMailerOptions(): MailerOptions | Promise<MailerOptions> {
     return {
       transport: {
-        service: this.configService.get<string>('mail.service'),
+        host: this.configService.get<string>('mail.host'),
+        port: this.configService.get<string>('mail.port'),
         auth: {
           user: this.configService.get<string>('mail.auth.user'),
           pass: this.configService.get<string>('mail.auth.pass'),
