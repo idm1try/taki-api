@@ -10,10 +10,12 @@ import {
   Put,
   Query,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { JwtAccessGuard, JwtRefreshGuard } from '../common/guards';
+import { Request, Response } from 'express';
+import { JwtAccessGuard } from '../common/guards';
 import { AuthService } from './auth.service';
 import { RequestWithParsedPayload } from './auth.type';
 import { DeleteAccountDto } from './dto/delete-account.dto';
@@ -34,21 +36,29 @@ export class AuthController {
 
   @Post('signup')
   @HttpCode(HttpStatus.CREATED)
-  signup(@Body() signupDto: SignupDto) {
-    return this.authService.signup(signupDto);
+  signup(
+    @Body() signupDto: SignupDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.authService.signup(signupDto, res);
   }
 
   @Post('signin')
   @HttpCode(HttpStatus.OK)
-  signin(@Body() signinEmailDto: SigninEmailDto) {
-    return this.authService.signin(signinEmailDto);
+  signin(
+    @Body() signinEmailDto: SigninEmailDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.authService.signin(signinEmailDto, res);
   }
 
   @Post('refresh')
-  @UseGuards(JwtRefreshGuard)
   @HttpCode(HttpStatus.OK)
-  refreshTokens(@Req() { user }: RequestWithParsedPayload) {
-    return this.authService.refreshTokens(user.userId, user.refreshToken);
+  refreshTokens(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.authService.refreshTokens(req, res);
   }
 
   @Get('account')
@@ -116,8 +126,11 @@ export class AuthController {
   @Post('signout')
   @UseGuards(JwtAccessGuard)
   @HttpCode(HttpStatus.OK)
-  signout(@Req() req: RequestWithParsedPayload) {
-    return this.authService.signout(req.user.userId);
+  signout(
+    @Req() req: RequestWithParsedPayload,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.authService.signout(req.user.userId, res);
   }
 
   @Put('account')

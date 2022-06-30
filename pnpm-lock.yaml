@@ -18,6 +18,7 @@ specifiers:
   '@nestjs/schematics': ^8.0.11
   '@nestjs/swagger': ^5.2.1
   '@nestjs/testing': ^8.4.6
+  '@types/cookie-parser': ^1.4.3
   '@types/express': ^4.17.13
   '@types/facebook-js-sdk': ^3.3.5
   '@types/jest': 27.4.1
@@ -29,6 +30,7 @@ specifiers:
   argon2: ^0.28.5
   class-transformer: ^0.5.1
   class-validator: ^0.13.2
+  cookie-parser: ^1.4.6
   eslint: ^8.17.0
   eslint-config-prettier: ^8.5.0
   eslint-plugin-prettier: ^4.0.0
@@ -68,6 +70,7 @@ dependencies:
   argon2: 0.28.5
   class-transformer: 0.5.1
   class-validator: 0.13.2
+  cookie-parser: 1.4.6
   fb: 2.0.0
   googleapis: 100.0.0
   helmet: 5.1.0
@@ -79,7 +82,7 @@ dependencies:
   reflect-metadata: 0.1.13
   rimraf: 3.0.2
   rxjs: 7.5.5
-  swagger-ui-express: 4.4.0
+  swagger-ui-express: 4.4.0_express@4.18.1
 
 devDependencies:
   '@commitlint/cli': 16.3.0
@@ -88,8 +91,9 @@ devDependencies:
   '@golevelup/ts-jest': 0.3.3
   '@jest/types': 28.1.1
   '@nestjs/cli': 8.2.8
-  '@nestjs/schematics': 8.0.11_typescript@4.7.4
+  '@nestjs/schematics': 8.0.11_nobats3jkocaued6l3papcxri4
   '@nestjs/testing': 8.4.7_yg656aic4dli3q2c2sx4xyqza4
+  '@types/cookie-parser': 1.4.3
   '@types/express': 4.17.13
   '@types/facebook-js-sdk': 3.3.5
   '@types/jest': 27.4.1
@@ -106,8 +110,8 @@ devDependencies:
   prettier: 2.7.1
   source-map-support: 0.5.21
   supertest: 6.2.3
-  ts-jest: 27.1.5_7qhprak64zhe3pbaj7ujjugqgu
-  ts-loader: 9.3.1_typescript@4.7.4
+  ts-jest: 27.1.5_fbbwihulhppcjrp7aftuzwdvqq
+  ts-loader: 9.3.1_3o2jfq6vfqxns3sz6wn2nnc3ei
   ts-node: 10.8.1_qqpsu5gwjto2muvbbvmj4ndcmu
   tsconfig-paths: 3.14.1
   typescript: 4.7.4
@@ -120,23 +124,6 @@ packages:
     dependencies:
       '@jridgewell/gen-mapping': 0.1.1
       '@jridgewell/trace-mapping': 0.3.13
-    dev: true
-
-  /@angular-devkit/core/13.3.5:
-    resolution: {integrity: sha512-w7vzK4VoYP9rLgxJ2SwEfrkpKybdD+QgQZlsDBzT0C6Ebp7b4gkNcNVFo8EiZvfDl6Yplw2IAP7g7fs3STn0hQ==}
-    engines: {node: ^12.20.0 || ^14.15.0 || >=16.10.0, npm: ^6.11.0 || ^7.5.6 || >=8.0.0, yarn: '>= 1.13.0'}
-    peerDependencies:
-      chokidar: ^3.5.2
-    peerDependenciesMeta:
-      chokidar:
-        optional: true
-    dependencies:
-      ajv: 8.9.0
-      ajv-formats: 2.1.1
-      fast-json-stable-stringify: 2.1.0
-      magic-string: 0.25.7
-      rxjs: 6.6.7
-      source-map: 0.7.3
     dev: true
 
   /@angular-devkit/core/13.3.5_chokidar@3.5.3:
@@ -186,19 +173,6 @@ packages:
       inquirer: 8.2.0
       minimist: 1.2.6
       symbol-observable: 4.0.0
-    transitivePeerDependencies:
-      - chokidar
-    dev: true
-
-  /@angular-devkit/schematics/13.3.5:
-    resolution: {integrity: sha512-0N/kL/Vfx0yVAEwa3HYxNx9wYb+G9r1JrLjJQQzDp+z9LtcojNf7j3oey6NXrDUs1WjVZOa/AIdRl3/DuaoG5w==}
-    engines: {node: ^12.20.0 || ^14.15.0 || >=16.10.0, npm: ^6.11.0 || ^7.5.6 || >=8.0.0, yarn: '>= 1.13.0'}
-    dependencies:
-      '@angular-devkit/core': 13.3.5
-      jsonc-parser: 3.0.0
-      magic-string: 0.25.7
-      ora: 5.4.1
-      rxjs: 6.6.7
     transitivePeerDependencies:
       - chokidar
     dev: true
@@ -1285,21 +1259,6 @@ packages:
       - chokidar
     dev: true
 
-  /@nestjs/schematics/8.0.11_typescript@4.7.4:
-    resolution: {integrity: sha512-W/WzaxgH5aE01AiIErE9QrQJ73VR/M/8p8pq0LZmjmNcjZqU5kQyOWUxZg13WYfSpJdOa62t6TZRtFDmgZPoIg==}
-    peerDependencies:
-      typescript: ^3.4.5 || ^4.3.5
-    dependencies:
-      '@angular-devkit/core': 13.3.5
-      '@angular-devkit/schematics': 13.3.5
-      fs-extra: 10.1.0
-      jsonc-parser: 3.0.0
-      pluralize: 8.0.0
-      typescript: 4.7.4
-    transitivePeerDependencies:
-      - chokidar
-    dev: true
-
   /@nestjs/swagger/5.2.1_22mmkdqibyufqwcxfa6zn2qjnu:
     resolution: {integrity: sha512-7dNa08WCnTsW/oAk3Ujde+z64JMfNm19DhpXasFR8oJp/9pggYAbYU927HpA+GJsSFJX6adjIRZsCKUqaGWznw==}
     peerDependencies:
@@ -1320,7 +1279,7 @@ packages:
       lodash: 4.17.21
       path-to-regexp: 3.2.0
       reflect-metadata: 0.1.13
-      swagger-ui-express: 4.4.0
+      swagger-ui-express: 4.4.0_express@4.18.1
     transitivePeerDependencies:
       - class-transformer
       - class-validator
@@ -1465,6 +1424,12 @@ packages:
     resolution: {integrity: sha512-cdeYyv4KWoEgpBISTxWvqYsVy444DOqehiF3fM3ne10AmJ62RSyNkUnxMJXHQWRQQX2eR94m5y1IZyDwBjV9FQ==}
     dependencies:
       '@types/node': 16.11.41
+    dev: true
+
+  /@types/cookie-parser/1.4.3:
+    resolution: {integrity: sha512-CqSKwFwefj4PzZ5n/iwad/bow2hTCh0FlNAeWLtQM3JA/NX/iYagIpWG2cf1bQKQ2c9gU2log5VUCrn7LDOs0w==}
+    dependencies:
+      '@types/express': 4.17.13
     dev: true
 
   /@types/cookiejar/2.1.2:
@@ -2758,8 +2723,21 @@ packages:
       safe-buffer: 5.1.2
     dev: true
 
+  /cookie-parser/1.4.6:
+    resolution: {integrity: sha512-z3IzaNjdwUC2olLIB5/ITd0/setiaFMLYiZJle7xg5Fe9KWAceil7xszYfHHBtDFYLSgJduS2Ty0P1uJdPDJeA==}
+    engines: {node: '>= 0.8.0'}
+    dependencies:
+      cookie: 0.4.1
+      cookie-signature: 1.0.6
+    dev: false
+
   /cookie-signature/1.0.6:
     resolution: {integrity: sha512-QADzlaHc8icV8I7vbaJXJwod9HWYp8uCqf1xa4OfNu1T7JVxQIrUgOWtHdNDtPiywmFbiS12VjotIXLrKM3orQ==}
+
+  /cookie/0.4.1:
+    resolution: {integrity: sha512-ZwrFkGJxUR3EIoXtO+yVE69Eb7KlixbaeAWfBQB9vVsNn/o+Yw69gBWSSDK825hQNdN+wF8zELf3dFNl/kxkUA==}
+    engines: {node: '>= 0.6'}
+    dev: false
 
   /cookie/0.5.0:
     resolution: {integrity: sha512-YZ3GUyn/o8gfKJlnlX7g7xq4gyO6OSuhGPKaaGssGB2qgDUS0gPgtTvoyZLTt9Ab6dC4hfc9dV5arkvc/OCmrw==}
@@ -7478,12 +7456,13 @@ packages:
     resolution: {integrity: sha512-B0Iy2ueXtbByE6OOyHTi3lFQkpPi/L7kFOKFeKTr44za7dJIELa9kzaca6GkndCgpK1QTjArnoXG+aUy0XQp1w==}
     dev: false
 
-  /swagger-ui-express/4.4.0:
+  /swagger-ui-express/4.4.0_express@4.18.1:
     resolution: {integrity: sha512-1CzRkHG386VQMVZK406jcpgnW2a9A5A/NiAjKhsFTQqUBWRF+uGbXTU/mA7WSV3mTzyOQDvjBdWP/c2qd5lqKw==}
     engines: {node: '>= v0.10.32'}
     peerDependencies:
       express: '>=4.0.0'
     dependencies:
+      express: 4.18.1
       swagger-ui-dist: 4.12.0
     dev: false
 
@@ -7666,7 +7645,7 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
-  /ts-jest/27.1.5_7qhprak64zhe3pbaj7ujjugqgu:
+  /ts-jest/27.1.5_fbbwihulhppcjrp7aftuzwdvqq:
     resolution: {integrity: sha512-Xv6jBQPoBEvBq/5i2TeSG9tt/nqkbpcurrEG1b+2yfBrcJelOZF9Ml6dmyMh7bcW9JyFbRYpR5rxROSlBLTZHA==}
     engines: {node: ^10.13.0 || ^12.13.0 || ^14.15.0 || >=15.0.0}
     hasBin: true
@@ -7687,6 +7666,7 @@ packages:
       esbuild:
         optional: true
     dependencies:
+      '@babel/core': 7.18.5
       '@types/jest': 27.4.1
       bs-logger: 0.2.6
       fast-json-stable-stringify: 2.1.0
@@ -7700,7 +7680,7 @@ packages:
       yargs-parser: 20.2.9
     dev: true
 
-  /ts-loader/9.3.1_typescript@4.7.4:
+  /ts-loader/9.3.1_3o2jfq6vfqxns3sz6wn2nnc3ei:
     resolution: {integrity: sha512-OkyShkcZTsTwyS3Kt7a4rsT/t2qvEVQuKCTg4LJmpj9fhFR7ukGdZwV6Qq3tRUkqcXtfGpPR7+hFKHCG/0d3Lw==}
     engines: {node: '>=12.0.0'}
     peerDependencies:
@@ -7712,6 +7692,7 @@ packages:
       micromatch: 4.0.5
       semver: 7.3.7
       typescript: 4.7.4
+      webpack: 5.73.0
     dev: true
 
   /ts-node/10.8.1_qqpsu5gwjto2muvbbvmj4ndcmu:

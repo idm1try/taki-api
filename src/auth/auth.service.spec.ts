@@ -2,6 +2,8 @@ import { HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
+import { Request, Response } from 'express';
+import { createMock } from '@golevelup/ts-jest';
 import { createMockFromClass } from '../../test/utils/createMockFromClass';
 import { Hashing } from '../common/helpers';
 import { Key } from '../key/key.schema';
@@ -134,12 +136,19 @@ describe('AuthService', () => {
         .spyOn(userService, 'findOne')
         .mockResolvedValueOnce({ ...user, password: 'hashed-secret' } as User);
 
+      const mockResponse = createMock<Response>({
+        cookie: jest.fn(),
+      });
+
       try {
-        await service.signup({
-          name: user.name,
-          email: user.email,
-          password: user.password,
-        });
+        await service.signup(
+          {
+            name: user.name,
+            email: user.email,
+            password: user.password,
+          },
+          mockResponse,
+        );
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.CONFLICT);
       }
@@ -179,11 +188,18 @@ describe('AuthService', () => {
         .spyOn(userService, 'getUserInfo')
         .mockResolvedValueOnce(user as any);
 
-      const response = await service.signup({
-        name: user.name,
-        email: user.email,
-        password: user.password,
+      const mockResponse = createMock<Response>({
+        cookie: jest.fn(),
       });
+
+      const response = await service.signup(
+        {
+          name: user.name,
+          email: user.email,
+          password: user.password,
+        },
+        mockResponse,
+      );
 
       expect(response).toEqual({
         tokens: { accessToken: 'at', refreshToken: 'rt' },
@@ -226,6 +242,7 @@ describe('AuthService', () => {
       );
       expect(spyMailSignupSuccess).toBeCalledWith(user.email, user.name);
       expect(spyUserServiceGetUserInfo).toBeCalledWith(user._id);
+      expect(mockResponse.cookie).toBeCalledTimes(1);
     });
   });
 
@@ -233,11 +250,18 @@ describe('AuthService', () => {
     it('should throw error when email is not exist', async () => {
       jest.spyOn(userService, 'findOne').mockResolvedValueOnce(undefined);
 
+      const mockResponse = createMock<Response>({
+        cookie: jest.fn(),
+      });
+
       try {
-        await service.signin({
-          email: 'notexist@gmail.com',
-          password: 'wrong',
-        });
+        await service.signin(
+          {
+            email: 'notexist@gmail.com',
+            password: 'wrong',
+          },
+          mockResponse,
+        );
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.NOT_FOUND);
       }
@@ -254,11 +278,18 @@ describe('AuthService', () => {
         password: await Hashing.hash(user.password),
       } as User);
 
+      const mockResponse = createMock<Response>({
+        cookie: jest.fn(),
+      });
+
       try {
-        await service.signin({
-          email: user.email,
-          password: 'not-secret',
-        });
+        await service.signin(
+          {
+            email: user.email,
+            password: 'not-secret',
+          },
+          mockResponse,
+        );
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.BAD_REQUEST);
       }
@@ -290,10 +321,17 @@ describe('AuthService', () => {
         .spyOn(userService, 'getUserInfo')
         .mockResolvedValueOnce(user as any);
 
-      const response = await service.signin({
-        email: user.email,
-        password: user.password,
+      const mockResponse = createMock<Response>({
+        cookie: jest.fn(),
       });
+
+      const response = await service.signin(
+        {
+          email: user.email,
+          password: user.password,
+        },
+        mockResponse,
+      );
 
       expect(response).toEqual({
         tokens: {
@@ -310,20 +348,47 @@ describe('AuthService', () => {
         { refreshToken: 'rt' },
       );
       expect(spyUserServiceGetUserInfo).toBeCalledWith(user._id);
+      expect(mockResponse.cookie).toBeCalledTimes(1);
     });
   });
 
   describe('refreshTokens', () => {
-    it('should throw error if user or refreshToken does exist', async () => {
+    it('should throw error when request cookie not has refreshToken', async () => {
       jest
         .spyOn(userService, 'findOne')
         .mockResolvedValueOnce(createUserDoc() as User);
 
+      const mockRequest = createMock<Request>({
+        cookies: {},
+      });
+      const mockResponse = createMock<Response>({ cookie: jest.fn() });
+
       try {
-        await service.refreshTokens('1', 'invalid-refresh-token');
+        await service.refreshTokens(mockRequest, mockResponse);
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.UNAUTHORIZED);
-        expect(error.message).toEqual('Access denied');
+      }
+    });
+
+    it('should throw error when user or refreshToken does exist', async () => {
+      jest
+        .spyOn(userService, 'findOne')
+        .mockResolvedValueOnce(createUserDoc() as User);
+      jest.spyOn(jwtService, 'decode').mockReturnValueOnce({
+        userId: '1',
+        iat: 123,
+        exp: 123,
+      });
+
+      const mockRequest = createMock<Request>({
+        cookies: { refreshToken: 'rt' as never },
+      });
+      const mockResponse = createMock<Response>({ cookie: jest.fn() });
+
+      try {
+        await service.refreshTokens(mockRequest, mockResponse);
+      } catch (error) {
+        expect(error.status).toEqual(HttpStatus.UNAUTHORIZED);
       }
     });
 
@@ -333,11 +398,19 @@ describe('AuthService', () => {
           refreshToken: await Hashing.hash('rt'),
         }) as User,
       );
+
+      const mockRequest = createMock<Request>({
+        cookies: { refreshToken: 'invalid-refresh-token' as never },
+      });
+      const mockResponse = createMock<Response>({ cookie: jest.fn() });
+      jest
+        .spyOn(jwtService, 'decode')
+        .mockReturnValueOnce({ userId: '1', iat: 123, exp: 123 });
+
       try {
-        await service.refreshTokens('1', 'invalid-refresh-token');
+        await service.refreshTokens(mockRequest, mockResponse);
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.UNAUTHORIZED);
-        expect(error.message).toEqual('Invalid refreshToken');
       }
     });
 
@@ -363,7 +436,16 @@ describe('AuthService', () => {
           createUserDoc({ refreshToken: 'hashed-new-rt' }) as User,
         );
 
-      const response = await service.refreshTokens(user._id, 'rt');
+      const spyJwtDecode = jest
+        .spyOn(jwtService, 'decode')
+        .mockReturnValueOnce({ userId: '1', iat: 123, exp: 123 });
+
+      const mockRequest = createMock<Request>({
+        cookies: { refreshToken: 'rt' as never },
+      });
+      const mockResponse = createMock<Response>({ cookie: jest.fn() });
+
+      const response = await service.refreshTokens(mockRequest, mockResponse);
 
       expect(response).toEqual({
         tokens: {
@@ -372,6 +454,7 @@ describe('AuthService', () => {
         },
       });
       expect(spyUserServiceFindOne).toBeCalledWith({ _id: user._id });
+      expect(spyJwtDecode).toBeCalledWith('rt');
       expect(spyJwtSign).toHaveBeenNthCalledWith(
         1,
         {
@@ -583,7 +666,7 @@ describe('AuthService', () => {
       }
     });
 
-    it('should send verify email and response to client', async () => {
+    it('should send verify email and response', async () => {
       const user = createUserDoc({ email: 'test@gmail.com', isVerify: false });
       const spyUserServiceFindOne = jest
         .spyOn(userService, 'findOne')
@@ -654,9 +737,12 @@ describe('AuthService', () => {
       jest
         .spyOn(userService, 'findOneAndUpdate')
         .mockResolvedValueOnce(undefined);
+      const mockResponse = createMock<Response>({
+        clearCookie: jest.fn(),
+      });
 
       try {
-        await service.signout('9');
+        await service.signout('9', mockResponse);
       } catch (error) {
         expect(error.status).toEqual(HttpStatus.UNAUTHORIZED);
       }
@@ -664,17 +750,33 @@ describe('AuthService', () => {
 
     it('should delete refreshToken in user field if accessToken valid', async () => {
       const user = createUserDoc();
-
       const spyUserServiceFindOneAndUpdate = jest
         .spyOn(userService, 'findOneAndUpdate')
         .mockResolvedValueOnce(createUserDoc({ refreshToken: null }) as User);
+      const mockResponse = createMock<Response>({
+        clearCookie: jest.fn(),
+      });
 
-      await service.signout(user._id);
+      await service.signout(user._id, mockResponse);
 
       expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
         { _id: user._id, refreshToken: { $exists: true, $ne: null } },
         { refreshToken: null },
       );
+    });
+
+    it('should clear response clear cookie', async () => {
+      const user = createUserDoc();
+      jest
+        .spyOn(userService, 'findOneAndUpdate')
+        .mockResolvedValueOnce(createUserDoc({ refreshToken: null }) as User);
+      const mockResponse = createMock<Response>({
+        clearCookie: jest.fn(),
+      });
+
+      await service.signout(user._id, mockResponse);
+
+      expect(mockResponse.clearCookie).toBeCalledWith('refreshToken');
     });
   });
 
