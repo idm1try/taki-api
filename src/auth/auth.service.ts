@@ -87,6 +87,7 @@ export class AuthService {
     response.cookie('refreshToken', tokens.refreshToken, {
       httpOnly: true,
       path: '/api/auth/refresh',
+      maxAge: 1000 * 60 * 60 * 24 * 7,
     });
 
     const userInfo = await this.userService.getUserInfo(user._id);
@@ -131,6 +132,8 @@ export class AuthService {
     response.cookie('refreshToken', tokens.refreshToken, {
       httpOnly: true,
       path: '/api/auth/refresh',
+
+      maxAge: 1000 * 60 * 60 * 24 * 7,
     });
 
     const userInfo = await this.userService.getUserInfo(user._id);
@@ -181,6 +184,8 @@ export class AuthService {
     response.cookie('refreshToken', tokens.refreshToken, {
       httpOnly: true,
       path: '/api/auth/refresh',
+
+      maxAge: 1000 * 60 * 60 * 24 * 7,
     });
 
     return { tokens };
