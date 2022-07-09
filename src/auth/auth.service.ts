@@ -378,7 +378,10 @@ export class AuthService {
     );
   }
 
-  public async googleSignIn(googleAccessToken: string): Promise<Tokens> {
+  public async googleSignIn(
+    googleAccessToken: string,
+    response: Response,
+  ): Promise<{ user: UserProfileSerializated; tokens: Tokens }> {
     const googleUserInfo = await this.authGoogleService.verify(
       googleAccessToken,
     );
@@ -414,7 +417,15 @@ export class AuthService {
       // Only send email notification when signin first time
       await this.mailService.signupSuccess(newUser.google.email, newUser.name);
 
-      return tokens;
+      response.cookie('refreshToken', tokens.refreshToken, {
+        httpOnly: true,
+        path: '/api/auth/refresh',
+        maxAge: 1000 * 60 * 60 * 24 * 7,
+      });
+
+      const userInfo = await this.userService.getUserInfo(newUser._id);
+
+      return { user: userInfo, tokens };
     }
 
     const tokens = await this.signTokens({
@@ -428,7 +439,15 @@ export class AuthService {
       },
     );
 
-    return tokens;
+    response.cookie('refreshToken', tokens.refreshToken, {
+      httpOnly: true,
+      path: '/api/auth/refresh',
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+    });
+
+    const userInfo = await this.userService.getUserInfo(user._id);
+
+    return { user: userInfo, tokens };
   }
 
   public async connectGoogle(
@@ -463,7 +482,10 @@ export class AuthService {
     );
   }
 
-  public async facebookSignIn(facebookAccessToken: string): Promise<Tokens> {
+  public async facebookSignIn(
+    facebookAccessToken: string,
+    response: Response,
+  ): Promise<{ user: UserProfileSerializated; tokens: Tokens }> {
     const facebookUserInfo = await this.authFacebookService.verify(
       facebookAccessToken,
     );
@@ -502,7 +524,15 @@ export class AuthService {
         newUser.name,
       );
 
-      return tokens;
+      response.cookie('refreshToken', tokens.refreshToken, {
+        httpOnly: true,
+        path: '/api/auth/refresh',
+        maxAge: 1000 * 60 * 60 * 24 * 7,
+      });
+
+      const userInfo = await this.userService.getUserInfo(newUser._id);
+
+      return { user: userInfo, tokens };
     }
 
     const tokens = await this.signTokens({
@@ -516,7 +546,15 @@ export class AuthService {
       },
     );
 
-    return tokens;
+    response.cookie('refreshToken', tokens.refreshToken, {
+      httpOnly: true,
+      path: '/api/auth/refresh',
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+    });
+
+    const userInfo = await this.userService.getUserInfo(user._id);
+
+    return { user: userInfo, tokens };
   }
 
   public async connectFacebook(

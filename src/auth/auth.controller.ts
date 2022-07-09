@@ -148,8 +148,11 @@ export class AuthController {
 
   @Post('google')
   @HttpCode(HttpStatus.OK)
-  googleSignIn(@Body() googleDto: GoogleDto) {
-    return this.authService.googleSignIn(googleDto.accessToken);
+  googleSignIn(
+    @Body() googleDto: GoogleDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.authService.googleSignIn(googleDto.accessToken, res);
   }
 
   @Put('connect-google')
@@ -167,8 +170,11 @@ export class AuthController {
 
   @Post('facebook')
   @HttpCode(HttpStatus.OK)
-  facebookSignIn(@Body() facebookDto: FacebookDto) {
-    return this.authService.facebookSignIn(facebookDto.accessToken);
+  facebookSignIn(
+    @Body() facebookDto: FacebookDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.authService.facebookSignIn(facebookDto.accessToken, res);
   }
 
   @Put('connect-facebook')
