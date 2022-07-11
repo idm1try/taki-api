@@ -1015,8 +1015,6 @@ describe('AuthService', () => {
         .spyOn(userService, 'findOneAndUpdate')
         .mockResolvedValueOnce({ ...user, refreshToken: 'hashed-rt' } as User);
 
-      const spyMailSignupSuccess = jest.spyOn(mailService, 'signupSuccess');
-
       const spyUserServiceGetUserInfo = jest
         .spyOn(userService, 'getUserInfo')
         .mockResolvedValueOnce(user as any);
@@ -1051,7 +1049,6 @@ describe('AuthService', () => {
         { _id: user._id },
         { refreshToken: 'rt' },
       );
-      expect(spyMailSignupSuccess).toBeCalledWith(user.google.email, user.name);
       expect(spyUserServiceGetUserInfo).toBeCalledWith(user._id);
       expect(mockResponse.cookie).toHaveBeenCalledTimes(1);
     });
@@ -1267,8 +1264,6 @@ describe('AuthService', () => {
         .spyOn(userService, 'findOneAndUpdate')
         .mockResolvedValueOnce({ ...user, refreshToken: 'hashed-rt' } as User);
 
-      const spyMailSignupSuccess = jest.spyOn(mailService, 'signupSuccess');
-
       const spyUserServiceGetUserInfo = jest
         .spyOn(userService, 'getUserInfo')
         .mockResolvedValueOnce(user as any);
@@ -1303,10 +1298,6 @@ describe('AuthService', () => {
       expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
         { _id: user._id },
         { refreshToken: 'rt' },
-      );
-      expect(spyMailSignupSuccess).toBeCalledWith(
-        user.facebook.email,
-        user.name,
       );
       expect(spyUserServiceGetUserInfo).toBeCalledWith(user._id);
       expect(mockResponse.cookie).toHaveBeenCalledTimes(1);

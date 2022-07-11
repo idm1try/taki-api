@@ -414,9 +414,6 @@ export class AuthService {
         },
       );
 
-      // Only send email notification when signin first time
-      await this.mailService.signupSuccess(newUser.google.email, newUser.name);
-
       response.cookie('refreshToken', tokens.refreshToken, {
         httpOnly: true,
         path: '/api/auth/refresh',
@@ -516,12 +513,6 @@ export class AuthService {
         {
           refreshToken: tokens.refreshToken,
         },
-      );
-
-      // Only send email notification when signin first time
-      await this.mailService.signupSuccess(
-        newUser.facebook.email,
-        newUser.name,
       );
 
       response.cookie('refreshToken', tokens.refreshToken, {
