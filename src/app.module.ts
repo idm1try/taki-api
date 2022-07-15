@@ -4,11 +4,16 @@ import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from './auth/auth.module';
 import { LoggerMiddleware } from './common/middlewares/logger.middleware';
-import { appConfig, authConfig, mailConfig, mongoConfig } from './config';
+import {
+  appConfig,
+  authConfig,
+  mailConfig,
+  mongoConfig,
+} from './common/configs';
 import { KeyModule } from './key/key.module';
 import { MailConfigService } from './mail/mail-config.service';
 import { NoteModule } from './note/note.module';
-import { MongooseConfigService } from './providers/database/mongoose.database';
+import { MongooseConfigService } from './common/providers/database/mongoose.database';
 import { TaskModule } from './task/task.module';
 import { UserModule } from './user/user.module';
 
