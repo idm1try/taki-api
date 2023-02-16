@@ -1,8 +1,4 @@
-# Taki Server REST API [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-<p align="center">
-  <img src="https://i.ibb.co/Mg6FHRS/Logo-1.png" />
-</p>
+# Taki Server REST API
 
 ## Installation
 
@@ -12,7 +8,7 @@ cd taki-server
 pnpm install
 ```
 
-Create `.env` file and put your configrations into it. Refer to the .env.example file for more information.
+Your configuration variables should be placed in a `.env` file that you create. See the.env.example file for more details.
 
 ## Run
 
@@ -31,7 +27,7 @@ pnpm run start:dev
 - NestJS
 - Swagger
 - JWT
-- MongoDB via Mongoose
+- MongoDB
 - NodeMailer
 - Google Auth
 - Facebook Auth
