@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { User } from '../user/user.schema';
 import { PriorityLevel } from './task.type';
+import { Transform } from 'class-transformer';
 
 @Schema({ timestamps: true })
 export class Task extends Document {
@@ -23,8 +24,9 @@ export class Task extends Document {
   })
   priorityLevel?: PriorityLevel;
 
+  @Transform((dueDate: any) => new Date(dueDate))
   @Prop({ required: false })
-  onDate?: Date | null;
+  dueDate?: Date | null;
 }
 
 const TaskSchema = SchemaFactory.createForClass(Task);

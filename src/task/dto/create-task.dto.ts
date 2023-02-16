@@ -35,5 +35,5 @@ export class CreateTaskDto {
   @IsOptional()
   @IsDate()
   @ApiProperty({ type: Date, required: false })
-  onDate?: Date;
+  dueDate?: Date;
 }

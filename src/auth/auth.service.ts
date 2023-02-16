@@ -2,7 +2,6 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
-  Injectable,
   NotAcceptableException,
   NotFoundException,
   UnauthorizedException,
@@ -20,17 +19,16 @@ import { AuthFacebookService } from './auth-facebook.service';
 import { AuthGoogleService } from './auth-google.service';
 import {
   AccountType,
+  DecodedToken,
   Payload,
   Tokens,
   UserProfileSerializated,
-  DecodedToken,
 } from './auth.type';
 import { DeleteAccountDto } from './dto/delete-account.dto';
 import { SigninEmailDto } from './dto/signin-email.dto';
 import { SignupDto } from './dto/signup.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
 
-@Injectable()
 export class AuthService {
   constructor(
     private readonly configService: ConfigService,
@@ -132,7 +130,6 @@ export class AuthService {
     response.cookie('refreshToken', tokens.refreshToken, {
       httpOnly: true,
       path: '/api/auth/refresh',
-
       maxAge: 1000 * 60 * 60 * 24 * 7,
     });
 

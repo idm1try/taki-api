@@ -1,9 +1,9 @@
+import { createMock } from '@golevelup/ts-jest';
 import { HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Request, Response } from 'express';
-import { createMock } from '@golevelup/ts-jest';
 import { createMockFromClass } from '../../test/utils/createMockFromClass';
 import { Hashing } from '../common/helpers';
 import { Key } from '../key/key.schema';
