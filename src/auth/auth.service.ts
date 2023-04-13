@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  Injectable,
   NotAcceptableException,
   NotFoundException,
   UnauthorizedException,
@@ -29,6 +30,7 @@ import { SigninEmailDto } from './dto/signin-email.dto';
 import { SignupDto } from './dto/signup.dto';
 import { UpdateAccountDto } from './dto/update-account.dto';
 
+@Injectable()
 export class AuthService {
   constructor(
     private readonly configService: ConfigService,
