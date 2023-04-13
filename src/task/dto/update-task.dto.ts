@@ -1,11 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-    IsBoolean, IsEnum,
-    IsISO8601,
-    IsNotEmpty,
-    IsOptional,
-    IsString,
-    Length
+  IsBoolean,
+  IsEnum,
+  IsISO8601,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Length,
 } from 'class-validator';
 import { PriorityLevel } from '../task.type';
 
