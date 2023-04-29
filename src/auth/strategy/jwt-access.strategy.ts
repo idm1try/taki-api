@@ -6,17 +6,17 @@ import { Payload } from '../auth.type';
 
 @Injectable()
 export class JwtAccessStrategy extends PassportStrategy(
-  Strategy,
-  'jwt-access',
+    Strategy,
+    'jwt-access',
 ) {
-  constructor(configService: ConfigService) {
-    super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: configService.get<string>('auth.jwt.accessSecret'),
-    });
-  }
+    constructor(configService: ConfigService) {
+        super({
+            jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+            secretOrKey: configService.get<string>('auth.jwt.accessSecret'),
+        });
+    }
 
-  async validate(payload: Payload) {
-    return payload;
-  }
+    async validate(payload: Payload) {
+        return payload;
+    }
 }

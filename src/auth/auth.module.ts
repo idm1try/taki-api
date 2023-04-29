@@ -13,22 +13,22 @@ import { JwtAccessStrategy } from './strategy/jwt-access.strategy';
 import { JwtRefreshStrategy } from './strategy/jwt-refresh.strategy';
 
 @Module({
-  imports: [
-    ConfigModule,
-    UserModule,
-    PassportModule,
-    JwtModule.register({}),
-    KeyModule,
-    MailModule,
-  ],
-  providers: [
-    AuthService,
-    AuthGoogleService,
-    AuthFacebookService,
-    JwtAccessStrategy,
-    JwtRefreshStrategy,
-  ],
-  controllers: [AuthController],
-  exports: [AuthService],
+    imports: [
+        ConfigModule,
+        UserModule,
+        PassportModule,
+        JwtModule.register({}),
+        KeyModule,
+        MailModule,
+    ],
+    providers: [
+        AuthService,
+        AuthGoogleService,
+        AuthFacebookService,
+        JwtAccessStrategy,
+        JwtRefreshStrategy,
+    ],
+    controllers: [AuthController],
+    exports: [AuthService],
 })
 export class AuthModule {}

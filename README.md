@@ -18,16 +18,16 @@ pnpm run start:dev
 
 ### Required
 
-- NodeJS
-- MongoDB
+-   NodeJS
+-   MongoDB
 
 ## Features
 
-- RESTful API
-- NestJS
-- Swagger
-- JWT
-- MongoDB
-- NodeMailer
-- Google Auth
-- Facebook Auth
+-   RESTful API
+-   NestJS
+-   Swagger
+-   JWT
+-   MongoDB
+-   NodeMailer
+-   Google Auth
+-   Facebook Auth

@@ -5,10 +5,10 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from './auth/auth.module';
 import { LoggerMiddleware } from './common/middlewares/logger.middleware';
 import {
-  appConfig,
-  authConfig,
-  mailConfig,
-  mongoConfig,
+    appConfig,
+    authConfig,
+    mailConfig,
+    mongoConfig,
 } from './common/configs';
 import { KeyModule } from './key/key.module';
 import { MailConfigService } from './mail/mail-config.service';
@@ -18,28 +18,28 @@ import { TaskModule } from './task/task.module';
 import { UserModule } from './user/user.module';
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      load: [appConfig, mongoConfig, authConfig, mailConfig],
-    }),
-    MongooseModule.forRootAsync({
-      useClass: MongooseConfigService,
-    }),
-    MailerModule.forRootAsync({
-      useClass: MailConfigService,
-    }),
-    UserModule,
-    AuthModule,
-    KeyModule,
-    TaskModule,
-    NoteModule,
-  ],
-  controllers: [],
-  providers: [],
+    imports: [
+        ConfigModule.forRoot({
+            isGlobal: true,
+            load: [appConfig, mongoConfig, authConfig, mailConfig],
+        }),
+        MongooseModule.forRootAsync({
+            useClass: MongooseConfigService,
+        }),
+        MailerModule.forRootAsync({
+            useClass: MailConfigService,
+        }),
+        UserModule,
+        AuthModule,
+        KeyModule,
+        TaskModule,
+        NoteModule,
+    ],
+    controllers: [],
+    providers: [],
 })
 export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer): void {
-    consumer.apply(LoggerMiddleware).forRoutes('*');
-  }
+    configure(consumer: MiddlewareConsumer): void {
+        consumer.apply(LoggerMiddleware).forRoutes('*');
+    }
 }

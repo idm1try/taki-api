@@ -4,14 +4,14 @@ import { User } from '../user/user.schema';
 
 @Schema({ timestamps: true })
 export class Note extends Document {
-  @Prop({ required: true })
-  title: string;
+    @Prop({ required: true })
+    title: string;
 
-  @Prop({ required: false })
-  content?: string;
+    @Prop({ required: false })
+    content?: string;
 
-  @Prop({ type: Types.ObjectId, ref: User.name, required: true })
-  user: string;
+    @Prop({ type: Types.ObjectId, ref: User.name, required: true })
+    user: string;
 }
 
 const NoteSchema = SchemaFactory.createForClass(Note);

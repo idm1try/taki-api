@@ -4,21 +4,21 @@ import { User } from '../user.schema';
 import { UserProfileSerialization } from './user-profile.serialization';
 
 describe('user-profile.serialization', () => {
-  it('should serialization user info', () => {
-    const userInfo: Partial<User> = {
-      _id: new Types.ObjectId(),
-      name: 'Test User',
-      email: 'test@gmail.com',
-      password: 'hashed-secret',
-      refreshToken: 'hashed-rt',
-    };
+    it('should serialization user info', () => {
+        const userInfo: Partial<User> = {
+            _id: new Types.ObjectId(),
+            name: 'Test User',
+            email: 'test@gmail.com',
+            password: 'hashed-secret',
+            refreshToken: 'hashed-rt',
+        };
 
-    const serializationedUserInfo = plainToInstance(
-      UserProfileSerialization,
-      userInfo,
-    );
+        const serializationedUserInfo = plainToInstance(
+            UserProfileSerialization,
+            userInfo,
+        );
 
-    expect(serializationedUserInfo).not.toHaveProperty('password');
-    expect(serializationedUserInfo).not.toHaveProperty('refreshToken');
-  });
+        expect(serializationedUserInfo).not.toHaveProperty('password');
+        expect(serializationedUserInfo).not.toHaveProperty('refreshToken');
+    });
 });

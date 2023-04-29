@@ -1,47 +1,47 @@
 import { Request } from 'express';
 
 export type Payload = {
-  userId: string;
+    userId: string;
 };
 
 export type Tokens = {
-  accessToken: string;
-  refreshToken: string;
+    accessToken: string;
+    refreshToken: string;
 };
 
 export type ParsedUserPayload = {
-  userId: string;
-  refreshToken?: string;
-  email?: string;
+    userId: string;
+    refreshToken?: string;
+    email?: string;
 };
 
 export type RequestWithParsedPayload = {
-  user: ParsedUserPayload;
+    user: ParsedUserPayload;
 } & Request;
 
 export enum AccountType {
-  Email = 'email',
-  Facebook = 'facebook',
-  Google = 'google',
+    Email = 'email',
+    Facebook = 'facebook',
+    Google = 'google',
 }
 
 export type ThirdPartyAccountInfo = {
-  id: string;
-  name: string;
-  email: string;
+    id: string;
+    name: string;
+    email: string;
 };
 
 export type DecodedToken = {
-  userId: string;
-  iat: number;
-  exp: number;
+    userId: string;
+    iat: number;
+    exp: number;
 };
 
 export type UserProfileSerializated = {
-  _id: string;
-  name: string;
-  email?: string;
-  isVerify?: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+    _id: string;
+    name: string;
+    email?: string;
+    isVerify?: boolean;
+    createdAt: Date;
+    updatedAt: Date;
 };

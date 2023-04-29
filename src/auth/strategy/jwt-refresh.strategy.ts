@@ -7,28 +7,29 @@ import { Payload } from '../auth.type';
 
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(
-  Strategy,
-  'jwt-refresh',
+    Strategy,
+    'jwt-refresh',
 ) {
-  constructor(configService: ConfigService) {
-    super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: configService.get<string>('auth.jwt.refreshSecret'),
-      passReqToCallback: true,
-    });
-  }
+    constructor(configService: ConfigService) {
+        super({
+            jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+            secretOrKey: configService.get<string>('auth.jwt.refreshSecret'),
+            passReqToCallback: true,
+        });
+    }
 
-  validate(
-    req: Request,
-    payload: Payload,
-  ): (Payload & { refreshToken: string }) | HttpException {
-    const refreshToken = req?.get('authorization')?.split(' ')[1];
+    validate(
+        req: Request,
+        payload: Payload,
+    ): (Payload & { refreshToken: string }) | HttpException {
+        const refreshToken = req?.get('authorization')?.split(' ')[1];
 
-    if (!refreshToken) throw new ForbiddenException('Refresh token malformed');
+        if (!refreshToken)
+            throw new ForbiddenException('Refresh token malformed');
 
-    return {
-      ...payload,
-      refreshToken,
-    };
-  }
+        return {
+            ...payload,
+            refreshToken,
+        };
+    }
 }
