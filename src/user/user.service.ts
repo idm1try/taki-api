@@ -7,6 +7,7 @@ import {
     SchemaDefinitionType,
     UpdateQuery,
 } from 'mongoose';
+import { UserProfileSerializated } from 'src/auth/auth.type';
 import { UserProfileSerialization } from './serialization/user-profile.serialization';
 import { User } from './user.schema';
 
@@ -22,6 +23,10 @@ export class UserService {
         return this.userModel.findOne(filter).lean();
     }
 
+    public serializationUser(user: User): UserProfileSerializated {
+        return plainToInstance(UserProfileSerialization, user);
+    }
+
     public async find(filter: FilterQuery<User>): Promise<User[]> {
         return this.userModel.find(filter).lean();
     }
@@ -33,10 +38,6 @@ export class UserService {
         return this.userModel.findOneAndUpdate(filter, newUpdates).exec();
     }
 
-    public async getUserInfo(userId: string) {
-        const user = await this.findOne({ _id: userId });
-        return plainToInstance(UserProfileSerialization, user);
-    }
 
     public async delete(userId: string): Promise<User> {
         return this.userModel.findOneAndDelete({ _id: userId }).exec();

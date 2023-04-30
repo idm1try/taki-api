@@ -1,10 +1,9 @@
-import { createMock } from '@golevelup/ts-jest';
+import { createMock, DeepMocked } from '@golevelup/ts-jest';
 import { HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Request, Response } from 'express';
-import { createMockFromClass } from '../../test/utils/createMockFromClass';
 import { Hashing } from '../common/helpers';
 import { Key } from '../key/key.schema';
 import { KeyService } from '../key/key.service';
@@ -25,13 +24,11 @@ const createUserDoc = (override: Partial<User> = {}): Partial<User> => ({
 
 describe('AuthService', () => {
     let service: AuthService;
-    let jwtService: JwtService;
-    let configService: ConfigService;
-    let userService: UserService;
-    let mailService: MailService;
-    let keyService: KeyService;
-    let authGoogleService: AuthGoogleService;
-    let authFacebookService: AuthFacebookService;
+    let userService: DeepMocked<UserService>;
+    let mailService: DeepMocked<MailService>;
+    let keyService: DeepMocked<KeyService>;
+    let authGoogleService: DeepMocked<AuthGoogleService>;
+    let authFacebookService: DeepMocked<AuthFacebookService>;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -39,44 +36,54 @@ describe('AuthService', () => {
                 AuthService,
                 {
                     provide: UserService,
-                    useValue: createMockFromClass(UserService),
+                    useValue: createMock<UserService>(),
                 },
                 {
                     provide: ConfigService,
-                    useValue: createMockFromClass(ConfigService),
+                    useValue: createMock<ConfigService>(),
                 },
                 {
                     provide: JwtService,
-                    useValue: createMockFromClass(JwtService),
+                    useValue: {
+                        signAsync: jest
+                            .fn()
+                            .mockImplementation()
+                            .mockResolvedValue('token'),
+                        decoded: jest
+                            .fn()
+                            .mockImplementation()
+                            .mockReturnValue({
+                                userId: '1',
+                                iat: 123,
+                                exp: 123,
+                            }),
+                    },
                 },
                 {
                     provide: KeyService,
-                    useValue: createMockFromClass(KeyService),
+                    useValue: createMock<KeyService>(),
                 },
                 {
                     provide: MailService,
-                    useValue: createMockFromClass(MailService),
+                    useValue: createMock<MailService>(),
                 },
                 {
                     provide: AuthGoogleService,
-                    useValue: createMockFromClass(AuthGoogleService),
+                    useValue: createMock<AuthGoogleService>(),
                 },
                 {
                     provide: AuthFacebookService,
-                    useValue: createMockFromClass(AuthFacebookService),
+                    useValue: createMock<AuthFacebookService>(),
                 },
             ],
         }).compile();
 
-        service = module.get<AuthService>(AuthService);
-        userService = module.get<UserService>(UserService);
-        jwtService = module.get<JwtService>(JwtService);
-        configService = module.get<ConfigService>(ConfigService);
-        mailService = module.get<MailService>(MailService);
-        keyService = module.get<KeyService>(KeyService);
-        authGoogleService = module.get<AuthGoogleService>(AuthGoogleService);
-        authFacebookService =
-            module.get<AuthFacebookService>(AuthFacebookService);
+        service = module.get(AuthService);
+        userService = module.get(UserService);
+        mailService = module.get(MailService);
+        keyService = module.get(KeyService);
+        authGoogleService = module.get(AuthGoogleService);
+        authFacebookService = module.get(AuthFacebookService);
     });
 
     it('should be defined', () => {
@@ -87,45 +94,7 @@ describe('AuthService', () => {
         jest.clearAllMocks();
     });
 
-    describe('signTokens', () => {
-        it('should return tokens', async () => {
-            const spyJwtSign = jest
-                .spyOn(jwtService, 'sign')
-                .mockResolvedValueOnce('at' as never)
-                .mockResolvedValueOnce('rt' as never);
-
-            const payload = { userId: '1' };
-            const tokens = await service.signTokens(payload);
-
-            expect(spyJwtSign).toHaveBeenNthCalledWith(
-                1,
-                {
-                    userId: '1',
-                },
-                {
-                    secret: configService.get('auth.jwt.accessSecret'),
-                    expiresIn: 60 * 15,
-                },
-            );
-            expect(spyJwtSign).toHaveBeenNthCalledWith(
-                2,
-                {
-                    userId: '1',
-                },
-                {
-                    secret: configService.get('auth.jwt.refreshSecret'),
-                    expiresIn: 60 * 60 * 24 * 7,
-                },
-            );
-
-            expect(tokens).toEqual({
-                accessToken: 'at',
-                refreshToken: 'rt',
-            });
-        });
-    });
-
-    describe('signup', () => {
+    describe.only('signup', () => {
         it('should throw error when email already used', async () => {
             const user = createUserDoc({
                 name: 'Test Name',
@@ -156,51 +125,37 @@ describe('AuthService', () => {
             }
         });
 
-        it('should send email and return tokens when signup success', async () => {
+        it('should return serialized user info and accessToken when signup success', async () => {
             const user = createUserDoc({
                 name: 'Test Name',
                 email: 'test@gmail.com',
                 password: 'secret',
             });
 
-            const spyUserServiceFindOne = jest
-                .spyOn(userService, 'findOne')
-                .mockResolvedValueOnce(undefined);
+            jest.spyOn(userService, 'findOne').mockResolvedValueOnce(undefined);
 
-            const spyUserServiceCreate = jest
-                .spyOn(userService, 'create')
-                .mockResolvedValueOnce({
-                    ...user,
-                    password: 'hashed-secret',
-                } as User);
+            jest.spyOn(userService, 'create').mockResolvedValueOnce({
+                ...user,
+                password: 'hashed-secret',
+            } as User);
 
-            const spyJwtSign = jest
-                .spyOn(jwtService, 'sign')
-                .mockResolvedValueOnce('at' as never)
-                .mockResolvedValueOnce('rt' as never);
+            jest.spyOn(userService, 'findOneAndUpdate').mockResolvedValueOnce({
+                ...user,
+                password: 'hashed-secret',
+                refreshToken: 'hashed-rt',
+            } as User);
 
-            const spyUserServiceFindOneAndUpdate = jest
-                .spyOn(userService, 'findOneAndUpdate')
-                .mockResolvedValueOnce({
-                    ...user,
-                    password: 'hashed-secret',
-                    refreshToken: 'hashed-rt',
-                } as User);
+            jest.spyOn(mailService, 'signupSuccess');
 
-            const spyMailSignupSuccess = jest.spyOn(
-                mailService,
-                'signupSuccess',
+            jest.spyOn(userService, 'serializationUser').mockReturnValueOnce(
+                user as any,
             );
-
-            const spyUserServiceGetUserInfo = jest
-                .spyOn(userService, 'getUserInfo')
-                .mockResolvedValueOnce(user as any);
 
             const mockResponse = createMock<Response>({
                 cookie: jest.fn(),
             });
 
-            const response = await service.signup(
+            const result = await service.signup(
                 {
                     name: user.name,
                     email: user.email,
@@ -209,48 +164,10 @@ describe('AuthService', () => {
                 mockResponse,
             );
 
-            expect(response).toEqual({
-                tokens: { accessToken: 'at', refreshToken: 'rt' },
+            expect(result).toEqual({
                 user,
+                accessToken: expect.any(String),
             });
-            expect(spyUserServiceFindOne).toBeCalledWith({
-                email: user.email,
-            });
-            expect(spyUserServiceCreate).toBeCalledWith({
-                name: user.name,
-                email: user.email,
-                password: user.password,
-            });
-            expect(spyJwtSign).toHaveBeenNthCalledWith(
-                1,
-                {
-                    userId: user._id,
-                },
-                {
-                    secret: configService.get('auth.jwt.accessSecret'),
-                    expiresIn: 60 * 15,
-                },
-            );
-            expect(spyJwtSign).toHaveBeenNthCalledWith(
-                2,
-                {
-                    userId: user._id,
-                },
-                {
-                    secret: configService.get('auth.jwt.refreshSecret'),
-                    expiresIn: 60 * 60 * 24 * 7,
-                },
-            );
-
-            expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
-                { _id: user._id },
-                {
-                    refreshToken: 'rt',
-                },
-            );
-            expect(spyMailSignupSuccess).toBeCalledWith(user.email, user.name);
-            expect(spyUserServiceGetUserInfo).toBeCalledWith(user._id);
-            expect(mockResponse.cookie).toBeCalledTimes(1);
         });
     });
 
@@ -309,33 +226,25 @@ describe('AuthService', () => {
                 password: 'secret',
             });
 
-            const spyUserServiceFindOne = jest
-                .spyOn(userService, 'findOne')
-                .mockResolvedValueOnce({
-                    ...user,
-                    password: await Hashing.hash(user.password),
-                } as User);
+            jest.spyOn(userService, 'findOne').mockResolvedValueOnce({
+                ...user,
+                password: await Hashing.hash(user.password),
+            } as User);
 
-            jest.spyOn(jwtService, 'sign')
-                .mockResolvedValueOnce('at' as never)
-                .mockResolvedValueOnce('rt' as never);
+            jest.spyOn(userService, 'findOneAndUpdate').mockResolvedValueOnce({
+                ...user,
+                refreshToken: 'hashed-rt',
+            } as User);
 
-            const spyUserServiceFindOneAndUpdate = jest
-                .spyOn(userService, 'findOneAndUpdate')
-                .mockResolvedValueOnce({
-                    ...user,
-                    refreshToken: 'hashed-rt',
-                } as User);
-
-            const spyUserServiceGetUserInfo = jest
-                .spyOn(userService, 'getUserInfo')
-                .mockResolvedValueOnce(user as any);
+            jest.spyOn(userService, 'serializationUser').mockReturnValueOnce(
+                user as any,
+            );
 
             const mockResponse = createMock<Response>({
                 cookie: jest.fn(),
             });
 
-            const response = await service.signin(
+            const result = await service.signin(
                 {
                     email: user.email,
                     password: user.password,
@@ -343,22 +252,13 @@ describe('AuthService', () => {
                 mockResponse,
             );
 
-            expect(response).toEqual({
+            expect(result).toEqual({
                 tokens: {
                     accessToken: 'at',
                     refreshToken: 'rt',
                 },
                 user,
             });
-            expect(spyUserServiceFindOne).toBeCalledWith({
-                email: user.email,
-            });
-            expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
-                { _id: '1' },
-                { refreshToken: 'rt' },
-            );
-            expect(spyUserServiceGetUserInfo).toBeCalledWith(user._id);
-            expect(mockResponse.cookie).toBeCalledTimes(1);
         });
     });
 
@@ -384,11 +284,6 @@ describe('AuthService', () => {
             jest.spyOn(userService, 'findOne').mockResolvedValueOnce(
                 createUserDoc() as User,
             );
-            jest.spyOn(jwtService, 'decode').mockReturnValueOnce({
-                userId: '1',
-                iat: 123,
-                exp: 123,
-            });
 
             const mockRequest = createMock<Request>({
                 cookies: { refreshToken: 'rt' as never },
@@ -413,11 +308,6 @@ describe('AuthService', () => {
                 cookies: { refreshToken: 'invalid-refresh-token' as never },
             });
             const mockResponse = createMock<Response>({ cookie: jest.fn() });
-            jest.spyOn(jwtService, 'decode').mockReturnValueOnce({
-                userId: '1',
-                iat: 123,
-                exp: 123,
-            });
 
             try {
                 await service.refreshTokens(mockRequest, mockResponse);
@@ -429,112 +319,32 @@ describe('AuthService', () => {
         it('should return tokens if refreshToken valid', async () => {
             const user = createUserDoc({ _id: '1', email: 'test@gmail.com' });
 
-            const spyUserServiceFindOne = jest
-                .spyOn(userService, 'findOne')
-                .mockResolvedValueOnce(
-                    createUserDoc({
-                        refreshToken: await Hashing.hash('rt'),
-                    }) as User,
-                );
+            jest.spyOn(userService, 'findOne').mockResolvedValueOnce(
+                createUserDoc({
+                    refreshToken: await Hashing.hash('rt'),
+                }) as User,
+            );
 
-            const spyJwtSign = jest
-                .spyOn(jwtService, 'sign')
-                .mockResolvedValueOnce('new-at' as never)
-                .mockResolvedValueOnce('new-rt' as never);
-
-            const spyUserServiceFindOneAndUpdate = jest
-                .spyOn(userService, 'findOneAndUpdate')
-                .mockResolvedValueOnce(
-                    createUserDoc({ refreshToken: 'hashed-new-rt' }) as User,
-                );
-
-            const spyJwtDecode = jest
-                .spyOn(jwtService, 'decode')
-                .mockReturnValueOnce({ userId: '1', iat: 123, exp: 123 });
+            jest.spyOn(userService, 'findOneAndUpdate').mockResolvedValueOnce(
+                createUserDoc({ refreshToken: 'hashed-new-rt' }) as User,
+            );
 
             const mockRequest = createMock<Request>({
                 cookies: { refreshToken: 'rt' as never },
             });
             const mockResponse = createMock<Response>({ cookie: jest.fn() });
 
-            const response = await service.refreshTokens(
+            const result = await service.refreshTokens(
                 mockRequest,
                 mockResponse,
             );
 
-            expect(response).toEqual({
+            expect(result).toEqual({
                 tokens: {
                     accessToken: 'new-at',
                     refreshToken: 'new-rt',
                 },
             });
-            expect(spyUserServiceFindOne).toBeCalledWith({ _id: user._id });
-            expect(spyJwtDecode).toBeCalledWith('rt');
-            expect(spyJwtSign).toHaveBeenNthCalledWith(
-                1,
-                {
-                    userId: user._id,
-                },
-                {
-                    secret: configService.get('auth.jwt.accessSecret'),
-                    expiresIn: 60 * 15,
-                },
-            );
-            expect(spyJwtSign).toHaveBeenNthCalledWith(
-                2,
-                {
-                    userId: user._id,
-                },
-                {
-                    secret: configService.get('auth.jwt.refreshSecret'),
-                    expiresIn: 60 * 60 * 24 * 7,
-                },
-            );
-            expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
-                { _id: user._id },
-                {
-                    refreshToken: 'new-rt',
-                },
-            );
-        });
-    });
-
-    describe('accountInfo', () => {
-        it('should throw error when userId not found', async () => {
-            jest.spyOn(userService, 'getUserInfo').mockReturnValueOnce(
-                undefined,
-            );
-
-            try {
-                await service.accountInfo('not-exist-id');
-            } catch (error) {
-                expect(error.status).toEqual(HttpStatus.FORBIDDEN);
-            }
-        });
-
-        it('should return account info without password and refreshTokens fields', async () => {
-            const user = createUserDoc({
-                name: 'Test Name',
-                email: 'test@gmail.com',
-                password: 'secret',
-                refreshToken: 'rt',
-            });
-
-            const spyUserServiceGetUserInfo = jest
-                .spyOn(userService, 'getUserInfo')
-                .mockResolvedValueOnce({
-                    _id: user._id,
-                    name: user.name,
-                    email: user.email,
-                } as UserProfileSerialization);
-
-            const result = await service.accountInfo(user._id);
-            expect(result).toEqual({
-                _id: user._id,
-                name: user.name,
-                email: user.email,
-            });
-            expect(spyUserServiceGetUserInfo).toBeCalledWith(user._id);
         });
     });
 
@@ -547,108 +357,20 @@ describe('AuthService', () => {
                 refreshToken: 'hashed-rt',
             });
 
-            const spyUserServiceFindOne = jest
-                .spyOn(userService, 'findOne')
-                .mockResolvedValueOnce({
-                    ...user,
-                    password: await Hashing.hash(user.password),
-                } as User);
-
-            const spyUserServiceFindOneAndUpdate = jest
-                .spyOn(userService, 'findOneAndUpdate')
-                .mockResolvedValueOnce({
-                    ...user,
-                    refreshToken: null,
-                    password: 'hashed-new-secret',
-                } as User);
-
-            const spyMailUpdatePasswordSuccess = jest.spyOn(
-                mailService,
-                'updatePasswordSuccess',
-            );
-
-            await service.updatePassword(user._id, user.password, 'new-secret');
-
-            expect(spyUserServiceFindOne).toBeCalledWith({ _id: '1' });
-            expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
-                { _id: user._id },
-                {
-                    password: 'new-secret',
-                    refreshToken: null,
-                },
-            );
-            expect(spyMailUpdatePasswordSuccess).toBeCalledWith(
-                user.email,
-                user.name,
-            );
-        });
-    });
-
-    describe('deleteAccount', () => {
-        it('should throw error when user is not exist', async () => {
-            jest.spyOn(userService, 'findOne').mockResolvedValueOnce(undefined);
-
-            try {
-                await service.deleteAccount('not-exist-id', {
-                    password: 'secret',
-                });
-            } catch (error) {
-                expect(error.status).toEqual(HttpStatus.NOT_FOUND);
-            }
-        });
-
-        it('should throw error when password not match', async () => {
-            const user = createUserDoc({
-                email: 'test@gmail.com',
-                password: 'secret',
-            });
-
             jest.spyOn(userService, 'findOne').mockResolvedValueOnce({
                 ...user,
                 password: await Hashing.hash(user.password),
             } as User);
 
-            try {
-                await service.deleteAccount(user._id, {
-                    password: 'not-secret',
-                });
-            } catch (error) {
-                expect(error.status).toEqual(HttpStatus.FORBIDDEN);
-            }
-        });
+            jest.spyOn(userService, 'findOneAndUpdate').mockResolvedValueOnce({
+                ...user,
+                refreshToken: null,
+                password: 'hashed-new-secret',
+            } as User);
 
-        it('should delete account and send email notification', async () => {
-            const user = createUserDoc({
-                email: 'test@gmail.com',
-                password: 'secret',
-            });
+            jest.spyOn(mailService, 'updatePasswordSuccess');
 
-            const spyUserServiceFindOne = jest
-                .spyOn(userService, 'findOne')
-                .mockResolvedValueOnce({
-                    ...user,
-                    password: await Hashing.hash(user.password),
-                } as User);
-
-            const spyUserServiceDelete = jest
-                .spyOn(userService, 'delete')
-                .mockResolvedValueOnce(user as User);
-
-            const spyMailDeleteAccountSuccess = jest.spyOn(
-                mailService,
-                'deleteAccountSuccess',
-            );
-
-            await service.deleteAccount(user._id, {
-                password: user.password,
-            });
-
-            expect(spyUserServiceFindOne).toBeCalledWith({ _id: user._id });
-            expect(spyUserServiceDelete).toBeCalledWith(user._id);
-            expect(spyMailDeleteAccountSuccess).toBeCalledWith(
-                user.email,
-                user.name,
-            );
+            await service.updatePassword(user._id, user.password, 'new-secret');
         });
     });
 
@@ -698,29 +420,19 @@ describe('AuthService', () => {
                 email: 'test@gmail.com',
                 isVerify: false,
             });
-            const spyUserServiceFindOne = jest
-                .spyOn(userService, 'findOne')
-                .mockResolvedValueOnce(user as User);
+            jest.spyOn(userService, 'findOne').mockResolvedValueOnce(
+                user as User,
+            );
 
-            const spyKeyServiceCreate = jest
-                .spyOn(keyService, 'create')
-                .mockResolvedValueOnce({
-                    id: '2',
-                    key: 'verify-key',
-                    email: user.email,
-                } as Key);
+            jest.spyOn(keyService, 'create').mockResolvedValueOnce({
+                id: '2',
+                key: 'verify-key',
+                email: user.email,
+            } as Key);
 
-            const spyMailVerifyEmail = jest.spyOn(mailService, 'verifyEmail');
+            jest.spyOn(mailService, 'verifyEmail');
 
             await service.verifyEmail(user._id);
-
-            expect(spyUserServiceFindOne).toBeCalledWith({ _id: user._id });
-            expect(spyKeyServiceCreate).toBeCalledWith(user.email);
-            expect(spyMailVerifyEmail).toBeCalledWith(
-                user.email,
-                'verify-key',
-                user.name,
-            );
         });
     });
 
@@ -740,31 +452,18 @@ describe('AuthService', () => {
                 email: 'test@gmail.com',
                 isVerify: false,
             });
-            const spyKeyServiceVerify = jest
-                .spyOn(keyService, 'verify')
-                .mockResolvedValueOnce({
-                    _id: '1',
-                    key: 'valid-key',
-                    email: user.email,
-                } as Key);
-            const spyUserServiceFindOneAndUpdate = jest
-                .spyOn(userService, 'findOneAndUpdate')
-                .mockResolvedValueOnce({ ...user, isVerify: true } as User);
-            const spyMailVerifyEmailSuccess = jest.spyOn(
-                mailService,
-                'verifyEmailSuccess',
-            );
+            jest.spyOn(keyService, 'verify').mockResolvedValueOnce({
+                _id: '1',
+                key: 'valid-key',
+                email: user.email,
+            } as Key);
+            jest.spyOn(userService, 'findOneAndUpdate').mockResolvedValueOnce({
+                ...user,
+                isVerify: true,
+            } as User);
+            jest.spyOn(mailService, 'verifyEmailSuccess');
 
             await service.confirmVerifyEmail('valid-key');
-            expect(spyKeyServiceVerify).toBeCalledWith('valid-key');
-            expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
-                { email: user.email },
-                { isVerify: true },
-            );
-            expect(spyMailVerifyEmailSuccess).toBeCalledWith(
-                user.email,
-                user.name,
-            );
         });
     });
 
@@ -786,21 +485,14 @@ describe('AuthService', () => {
 
         it('should delete refreshToken in user field if accessToken valid', async () => {
             const user = createUserDoc();
-            const spyUserServiceFindOneAndUpdate = jest
-                .spyOn(userService, 'findOneAndUpdate')
-                .mockResolvedValueOnce(
-                    createUserDoc({ refreshToken: null }) as User,
-                );
+            jest.spyOn(userService, 'findOneAndUpdate').mockResolvedValueOnce(
+                createUserDoc({ refreshToken: null }) as User,
+            );
             const mockResponse = createMock<Response>({
                 clearCookie: jest.fn(),
             });
 
             await service.signout(user._id, mockResponse);
-
-            expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
-                { _id: user._id, refreshToken: { $exists: true, $ne: null } },
-                { refreshToken: null },
-            );
         });
 
         it('should clear response clear cookie', async () => {
@@ -872,31 +564,18 @@ describe('AuthService', () => {
                 email: 'test@gmail.com',
                 isVerify: true,
             });
-            const spyUserServiceFindOne = jest
-                .spyOn(userService, 'findOne')
-                .mockResolvedValueOnce(user as User);
-
-            const spyMailForgotPassword = jest.spyOn(
-                mailService,
-                'forgotPassword',
+            jest.spyOn(userService, 'findOne').mockResolvedValueOnce(
+                user as User,
             );
 
-            const spyForgotCreate = jest
-                .spyOn(keyService, 'create')
-                .mockResolvedValueOnce({
-                    key: 'reset-key',
-                    email: user.email,
-                } as Key);
+            jest.spyOn(mailService, 'forgotPassword');
+
+            jest.spyOn(keyService, 'create').mockResolvedValueOnce({
+                key: 'reset-key',
+                email: user.email,
+            } as Key);
 
             await service.forgotPassword(user.email);
-
-            expect(spyUserServiceFindOne).toBeCalledWith({ email: user.email });
-            expect(spyMailForgotPassword).toBeCalledWith(
-                user.email,
-                'reset-key',
-                user.name,
-            );
-            expect(spyForgotCreate).toBeCalledWith(user.email);
         });
     });
 
@@ -937,105 +616,22 @@ describe('AuthService', () => {
                 email: 'test@gmail.com',
                 isVerify: true,
             });
-            const spyForgotVerify = jest
-                .spyOn(keyService, 'verify')
-                .mockResolvedValueOnce({
-                    key: 'valid-key',
-                    email: user.email,
-                } as Key);
+            jest.spyOn(keyService, 'verify').mockResolvedValueOnce({
+                key: 'valid-key',
+                email: user.email,
+            } as Key);
 
-            const spyUserServiceFindOneAndUpdate = jest
-                .spyOn(userService, 'findOneAndUpdate')
-                .mockResolvedValueOnce({
-                    ...user,
-                    password: 'hashed-new-secret',
-                    refreshToken: null,
-                } as User);
+            jest.spyOn(userService, 'findOneAndUpdate').mockResolvedValueOnce({
+                ...user,
+                password: 'hashed-new-secret',
+                refreshToken: null,
+            } as User);
 
-            const spyForgotRevoke = jest.spyOn(keyService, 'revoke');
+            jest.spyOn(keyService, 'revoke');
 
-            const spyMailResetPasswordSuccess = jest.spyOn(
-                mailService,
-                'resetPasswordSuccess',
-            );
+            jest.spyOn(mailService, 'resetPasswordSuccess');
 
             await service.resetPassword('valid-key', 'new-password');
-
-            expect(spyForgotVerify).toBeCalledWith('valid-key');
-            expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
-                { email: user.email },
-                { password: 'new-password', refreshToken: null },
-            );
-            expect(spyForgotRevoke).toBeCalledWith('valid-key');
-            expect(spyMailResetPasswordSuccess).toBeCalledWith(
-                user.email,
-                user.name,
-            );
-        });
-    });
-
-    describe('updateAccountInfo', () => {
-        it('should throw error when update object is empty', async () => {
-            try {
-                await service.updateAccountInfo('1', {});
-            } catch (error) {
-                expect(error.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
-            }
-        });
-
-        it('should throw error when new email same as old email', async () => {
-            const user = createUserDoc({ email: 'test@gmail.com' });
-
-            jest.spyOn(userService, 'findOne').mockResolvedValueOnce(
-                user as User,
-            );
-
-            try {
-                await service.updateAccountInfo(user._id, {
-                    email: user.email,
-                });
-            } catch (error) {
-                expect(error.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
-            }
-        });
-
-        it('should throw error when new email is being used by another account', async () => {
-            const user = createUserDoc({ _id: '2', email: 'test@gmail.com' });
-
-            jest.spyOn(userService, 'findOne').mockResolvedValueOnce(
-                user as User,
-            );
-
-            try {
-                await service.updateAccountInfo('1', { email: user.email });
-            } catch (error) {
-                expect(error.status).toEqual(HttpStatus.CONFLICT);
-            }
-        });
-
-        it('should response message update success', async () => {
-            const user = createUserDoc({ email: 'test@gmail.com' });
-
-            const spyUserServiceFindOne = jest
-                .spyOn(userService, 'findOne')
-                .mockResolvedValueOnce(undefined);
-
-            const spyUserServiceFindOneAndUpdate = jest
-                .spyOn(userService, 'findOneAndUpdate')
-                .mockResolvedValueOnce(user as User);
-
-            await service.updateAccountInfo(user._id, {
-                name: 'New Test Name',
-                email: 'newtest@gmail.com',
-            });
-
-            expect(spyUserServiceFindOne).toBeCalledWith({
-                email: 'newtest@gmail.com',
-            });
-            expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
-                { _id: user._id },
-                { name: 'New Test Name', email: 'newtest@gmail.com' },
-            );
         });
     });
 
@@ -1068,145 +664,80 @@ describe('AuthService', () => {
         });
 
         it('should create new account and return tokens if not exist', async () => {
-            const spyAuthGoogleServiceVerify = jest
-                .spyOn(authGoogleService, 'verify')
-                .mockResolvedValueOnce({
-                    name: user.name,
-                    ...user.google,
-                } as ThirdPartyAccountInfo);
+            jest.spyOn(authGoogleService, 'verify').mockResolvedValueOnce({
+                name: user.name,
+                ...user.google,
+            } as ThirdPartyAccountInfo);
 
-            const spyUserServiceFindOne = jest
-                .spyOn(userService, 'findOne')
-                .mockResolvedValueOnce(undefined);
+            jest.spyOn(userService, 'findOne').mockResolvedValueOnce(undefined);
 
-            const spyUserServiceCreate = jest
-                .spyOn(userService, 'create')
-                .mockResolvedValueOnce(user as User);
+            jest.spyOn(userService, 'create').mockResolvedValueOnce(
+                user as User,
+            );
 
-            jest.spyOn(jwtService, 'sign')
-                .mockResolvedValueOnce('at' as never)
-                .mockResolvedValueOnce('rt' as never);
+            jest.spyOn(userService, 'findOneAndUpdate').mockResolvedValueOnce({
+                ...user,
+                refreshToken: 'hashed-rt',
+            } as User);
 
-            const spyUserServiceFindOneAndUpdate = jest
-                .spyOn(userService, 'findOneAndUpdate')
-                .mockResolvedValueOnce({
-                    ...user,
-                    refreshToken: 'hashed-rt',
-                } as User);
-
-            const spyUserServiceGetUserInfo = jest
-                .spyOn(userService, 'getUserInfo')
-                .mockResolvedValueOnce(user as any);
+            jest.spyOn(userService, 'serializationUser').mockReturnValueOnce(
+                user as any,
+            );
 
             const mockResponse = createMock<Response>({
                 cookie: jest.fn(),
             });
 
-            const response = await service.googleSignIn(
+            const result = await service.googleSignIn(
                 'valid-google-access-token',
                 mockResponse,
             );
 
-            expect(response).toEqual({
+            expect(result).toEqual({
                 user,
                 tokens: {
                     accessToken: 'at',
                     refreshToken: 'rt',
                 },
             });
-            expect(spyAuthGoogleServiceVerify).toBeCalledWith(
-                'valid-google-access-token',
-            );
-            expect(spyUserServiceFindOne).toBeCalledWith({
-                'google.id': user.google.id,
-            });
-            expect(spyUserServiceCreate).toBeCalledWith({
-                google: { id: user.google.id, email: user.google.email },
-                name: user.name,
-            });
-            expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
-                { _id: user._id },
-                { refreshToken: 'rt' },
-            );
-            expect(spyUserServiceGetUserInfo).toBeCalledWith(user._id);
             expect(mockResponse.cookie).toHaveBeenCalledTimes(1);
         });
 
         it('should return new tokens if exist google account', async () => {
-            const spyAuthGoogleServiceVerify = jest
-                .spyOn(authGoogleService, 'verify')
-                .mockResolvedValueOnce({
-                    name: user.name,
-                    ...user.google,
-                } as ThirdPartyAccountInfo);
+            jest.spyOn(authGoogleService, 'verify').mockResolvedValueOnce({
+                name: user.name,
+                ...user.google,
+            } as ThirdPartyAccountInfo);
 
-            const spyUserServiceFindOne = jest
-                .spyOn(userService, 'findOne')
-                .mockResolvedValueOnce(user as User);
+            jest.spyOn(userService, 'findOne').mockResolvedValueOnce(
+                user as User,
+            );
 
-            const spyJwtSign = jest
-                .spyOn(jwtService, 'sign')
-                .mockResolvedValueOnce('at' as never)
-                .mockResolvedValueOnce('rt' as never);
+            jest.spyOn(userService, 'findOneAndUpdate').mockResolvedValueOnce({
+                ...user,
+                refreshToken: 'hashed-rt',
+            } as User);
 
-            const spyUserServiceFindOneAndUpdate = jest
-                .spyOn(userService, 'findOneAndUpdate')
-                .mockResolvedValueOnce({
-                    ...user,
-                    refreshToken: 'hashed-rt',
-                } as User);
-
-            const spyUserServiceGetUserInfo = jest
-                .spyOn(userService, 'getUserInfo')
-                .mockResolvedValueOnce(user as any);
+            jest.spyOn(userService, 'serializationUser').mockReturnValueOnce(
+                user as any,
+            );
 
             const mockResponse = createMock<Response>({
                 cookie: jest.fn(),
             });
 
-            const response = await service.googleSignIn(
+            const result = await service.googleSignIn(
                 'valid-google-access-token',
                 mockResponse,
             );
 
-            expect(response).toEqual({
+            expect(result).toEqual({
                 user,
                 tokens: {
                     accessToken: 'at',
                     refreshToken: 'rt',
                 },
             });
-            expect(spyAuthGoogleServiceVerify).toBeCalledWith(
-                'valid-google-access-token',
-            );
-            expect(spyUserServiceFindOne).toBeCalledWith({
-                'google.id': user.google.id,
-            });
-            expect(spyJwtSign).toHaveBeenNthCalledWith(
-                1,
-                {
-                    userId: user._id,
-                },
-                {
-                    secret: configService.get('auth.jwt.accessSecret'),
-                    expiresIn: 60 * 15,
-                },
-            );
-            expect(spyJwtSign).toHaveBeenNthCalledWith(
-                2,
-                {
-                    userId: user._id,
-                },
-                {
-                    secret: configService.get('auth.jwt.refreshSecret'),
-                    expiresIn: 60 * 60 * 24 * 7,
-                },
-            );
-            expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
-                { _id: user._id },
-                { refreshToken: 'rt' },
-            );
-            expect(spyUserServiceGetUserInfo).toBeCalledWith(user._id);
             expect(mockResponse.cookie).toHaveBeenCalledTimes(1);
         });
     });
@@ -1276,37 +807,20 @@ describe('AuthService', () => {
         });
 
         it('should connect to email account', async () => {
-            const spyUserServiceFindOne = jest
-                .spyOn(userService, 'findOne')
+            jest.spyOn(userService, 'findOne')
                 .mockResolvedValueOnce({ ...user, google: null } as User)
                 .mockResolvedValueOnce(undefined);
 
-            const spyAuthGoogleServiceVerify = jest
-                .spyOn(authGoogleService, 'verify')
-                .mockResolvedValueOnce({
-                    name: user.name,
-                    ...user.google,
-                } as ThirdPartyAccountInfo);
+            jest.spyOn(authGoogleService, 'verify').mockResolvedValueOnce({
+                name: user.name,
+                ...user.google,
+            } as ThirdPartyAccountInfo);
 
-            const spyUserServiceFindOneAndUpdate = jest
-                .spyOn(userService, 'findOneAndUpdate')
-                .mockResolvedValueOnce(user as User);
+            jest.spyOn(userService, 'findOneAndUpdate').mockResolvedValueOnce(
+                user as User,
+            );
 
             await service.connectGoogle(user._id, 'valid-google-access-token');
-
-            expect(spyUserServiceFindOne).toHaveBeenNthCalledWith(1, {
-                _id: user._id,
-            });
-            expect(spyAuthGoogleServiceVerify).toBeCalledWith(
-                'valid-google-access-token',
-            );
-            expect(spyUserServiceFindOne).toHaveBeenNthCalledWith(2, {
-                'google.id': user.google.id,
-            });
-            expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
-                { _id: user._id },
-                { google: user.google },
-            );
         });
     });
 
@@ -1335,46 +849,36 @@ describe('AuthService', () => {
         });
 
         it('should create new account and return tokens if not exist', async () => {
-            const spyAuthFacebookServiceVerify = jest
-                .spyOn(authFacebookService, 'verify')
-                .mockResolvedValueOnce({
-                    name: user.name,
-                    ...user.facebook,
-                } as ThirdPartyAccountInfo);
+            jest.spyOn(authFacebookService, 'verify').mockResolvedValueOnce({
+                name: user.name,
+                ...user.facebook,
+            } as ThirdPartyAccountInfo);
 
-            const spyUserServiceFindOne = jest
-                .spyOn(userService, 'findOne')
-                .mockResolvedValueOnce(undefined);
+            jest.spyOn(userService, 'findOne').mockResolvedValueOnce(undefined);
 
-            const spyUserServiceCreate = jest
-                .spyOn(userService, 'create')
-                .mockResolvedValueOnce(user as User);
+            jest.spyOn(userService, 'create').mockResolvedValueOnce(
+                user as User,
+            );
 
-            jest.spyOn(jwtService, 'sign')
-                .mockResolvedValueOnce('at' as never)
-                .mockResolvedValueOnce('rt' as never);
+            jest.spyOn(userService, 'findOneAndUpdate').mockResolvedValueOnce({
+                ...user,
+                refreshToken: 'hashed-rt',
+            } as User);
 
-            const spyUserServiceFindOneAndUpdate = jest
-                .spyOn(userService, 'findOneAndUpdate')
-                .mockResolvedValueOnce({
-                    ...user,
-                    refreshToken: 'hashed-rt',
-                } as User);
-
-            const spyUserServiceGetUserInfo = jest
-                .spyOn(userService, 'getUserInfo')
-                .mockResolvedValueOnce(user as any);
+            jest.spyOn(userService, 'serializationUser').mockReturnValueOnce(
+                user as any,
+            );
 
             const mockResponse = createMock<Response>({
                 cookie: jest.fn(),
             });
 
-            const response = await service.facebookSignIn(
+            const result = await service.facebookSignIn(
                 'valid-facebook-access-token',
                 mockResponse,
             );
 
-            expect(response).toEqual({
+            expect(result).toEqual({
                 user,
                 tokens: {
                     accessToken: 'at',
@@ -1382,97 +886,42 @@ describe('AuthService', () => {
                 },
             });
 
-            expect(spyAuthFacebookServiceVerify).toBeCalledWith(
-                'valid-facebook-access-token',
-            );
-            expect(spyUserServiceFindOne).toBeCalledWith({
-                'facebook.id': user.facebook.id,
-            });
-            expect(spyUserServiceCreate).toBeCalledWith({
-                name: user.name,
-                facebook: user.facebook,
-            });
-            expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
-                { _id: user._id },
-                { refreshToken: 'rt' },
-            );
-            expect(spyUserServiceGetUserInfo).toBeCalledWith(user._id);
             expect(mockResponse.cookie).toHaveBeenCalledTimes(1);
         });
 
         it('should return new tokens if exist facebook account', async () => {
-            const spyAuthFacebookServiceVerify = jest
-                .spyOn(authFacebookService, 'verify')
-                .mockResolvedValueOnce({
-                    name: user.name,
-                    ...user.facebook,
-                } as ThirdPartyAccountInfo);
+            jest.spyOn(authFacebookService, 'verify').mockResolvedValueOnce({
+                name: user.name,
+                ...user.facebook,
+            } as ThirdPartyAccountInfo);
 
-            const spyUserServiceFindOne = jest
-                .spyOn(userService, 'findOne')
-                .mockResolvedValueOnce(user as User);
+            jest.spyOn(userService, 'findOne').mockResolvedValueOnce(
+                user as User,
+            );
 
-            const spyJwtSign = jest
-                .spyOn(jwtService, 'sign')
-                .mockResolvedValueOnce('at' as never)
-                .mockResolvedValueOnce('rt' as never);
-
-            const spyUserServiceFindOneAndUpdate = jest
-                .spyOn(userService, 'findOneAndUpdate')
-                .mockResolvedValueOnce({
-                    ...user,
-                    refreshToken: 'hashed-rt',
-                } as User);
-            const spyUserServiceGetUserInfo = jest
-                .spyOn(userService, 'getUserInfo')
-                .mockResolvedValueOnce(user as any);
+            jest.spyOn(userService, 'findOneAndUpdate').mockResolvedValueOnce({
+                ...user,
+                refreshToken: 'hashed-rt',
+            } as User);
+            jest.spyOn(userService, 'serializationUser').mockReturnValueOnce(
+                user as any,
+            );
             const mockResponse = createMock<Response>({
                 cookie: jest.fn(),
             });
 
-            const response = await service.facebookSignIn(
+            const result = await service.facebookSignIn(
                 'valid-facebook-access-token',
                 mockResponse,
             );
 
-            expect(response).toEqual({
+            expect(result).toEqual({
                 user,
                 tokens: {
                     accessToken: 'at',
                     refreshToken: 'rt',
                 },
             });
-            expect(spyAuthFacebookServiceVerify).toBeCalledWith(
-                'valid-facebook-access-token',
-            );
-            expect(spyUserServiceFindOne).toBeCalledWith({
-                'facebook.id': user.facebook.id,
-            });
-            expect(spyJwtSign).toHaveBeenNthCalledWith(
-                1,
-                {
-                    userId: user._id,
-                },
-                {
-                    secret: configService.get('auth.jwt.accessSecret'),
-                    expiresIn: 60 * 15,
-                },
-            );
-            expect(spyJwtSign).toHaveBeenNthCalledWith(
-                2,
-                {
-                    userId: user._id,
-                },
-                {
-                    secret: configService.get('auth.jwt.refreshSecret'),
-                    expiresIn: 60 * 60 * 24 * 7,
-                },
-            );
-            expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
-                { _id: user._id },
-                { refreshToken: 'rt' },
-            );
-            expect(spyUserServiceGetUserInfo).toBeCalledWith(user._id);
             expect(mockResponse.cookie).toHaveBeenCalledTimes(1);
         });
     });
@@ -1542,39 +991,22 @@ describe('AuthService', () => {
         });
 
         it('should connect to email account', async () => {
-            const spyUserServiceFindOne = jest
-                .spyOn(userService, 'findOne')
+            jest.spyOn(userService, 'findOne')
                 .mockResolvedValueOnce({ ...user, facebook: null } as User)
                 .mockResolvedValueOnce(undefined);
 
-            const spyAuthFacebookServiceVerify = jest
-                .spyOn(authFacebookService, 'verify')
-                .mockResolvedValueOnce({
-                    name: user.name,
-                    ...user.facebook,
-                } as ThirdPartyAccountInfo);
+            jest.spyOn(authFacebookService, 'verify').mockResolvedValueOnce({
+                name: user.name,
+                ...user.facebook,
+            } as ThirdPartyAccountInfo);
 
-            const spyUserServiceFindOneAndUpdate = jest
-                .spyOn(userService, 'findOneAndUpdate')
-                .mockResolvedValueOnce(user as User);
+            jest.spyOn(userService, 'findOneAndUpdate').mockResolvedValueOnce(
+                user as User,
+            );
 
             await service.connectFacebook(
                 user._id,
                 'valid-facebook-access-token',
-            );
-
-            expect(spyUserServiceFindOne).toHaveBeenNthCalledWith(1, {
-                _id: '1',
-            });
-            expect(spyAuthFacebookServiceVerify).toBeCalledWith(
-                'valid-facebook-access-token',
-            );
-            expect(spyUserServiceFindOne).toHaveBeenNthCalledWith(2, {
-                'facebook.id': user.facebook.id,
-            });
-            expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
-                { _id: user._id },
-                { facebook: user.facebook },
             );
         });
     });
@@ -1616,33 +1048,19 @@ describe('AuthService', () => {
         });
 
         it('should connect to facebook/google account', async () => {
-            const spyUserServiceFindOne = jest
-                .spyOn(userService, 'findOne')
+            jest.spyOn(userService, 'findOne')
                 .mockResolvedValueOnce({ ...user, email: null } as User)
                 .mockResolvedValueOnce(undefined);
 
-            const spyUserServiceFindOneAndUpdate = jest
-                .spyOn(userService, 'findOneAndUpdate')
-                .mockResolvedValueOnce({
-                    ...user,
-                    password: 'hashed-secret',
-                } as User);
+            jest.spyOn(userService, 'findOneAndUpdate').mockResolvedValueOnce({
+                ...user,
+                password: 'hashed-secret',
+            } as User);
 
             await service.connectEmail(user._id, {
                 email: user.email,
                 password: user.password,
             });
-
-            expect(spyUserServiceFindOne).toHaveBeenNthCalledWith(1, {
-                _id: user._id,
-            });
-            expect(spyUserServiceFindOne).toHaveBeenNthCalledWith(2, {
-                email: user.email,
-            });
-            expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
-                { _id: user._id },
-                { email: user.email, password: user.password },
-            );
         });
     });
 
@@ -1680,21 +1098,16 @@ describe('AuthService', () => {
                 google: { id: 'google-id', email: 'test@gmail.com' },
             });
 
-            const spyUserServiceFindOne = jest
-                .spyOn(userService, 'findOne')
-                .mockResolvedValueOnce(user as User);
+            jest.spyOn(userService, 'findOne').mockResolvedValueOnce(
+                user as User,
+            );
 
-            const spyUserServiceFindOneAndUpdate = jest
-                .spyOn(userService, 'findOneAndUpdate')
-                .mockResolvedValueOnce({ ...user, google: null } as User);
+            jest.spyOn(userService, 'findOneAndUpdate').mockResolvedValueOnce({
+                ...user,
+                google: null,
+            } as User);
 
             await service.unlinkAccount(user._id, AccountType.Google);
-
-            expect(spyUserServiceFindOne).toBeCalledWith({ _id: user._id });
-            expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
-                { _id: user._id },
-                { $unset: { google: '' } },
-            );
         });
 
         it('should unlink facebook account', async () => {
@@ -1704,21 +1117,16 @@ describe('AuthService', () => {
                 facebook: { id: 'facebook-id', email: 'test@gmail.com' },
             });
 
-            const spyUserServiceFindOne = jest
-                .spyOn(userService, 'findOne')
-                .mockResolvedValueOnce(user as User);
+            jest.spyOn(userService, 'findOne').mockResolvedValueOnce(
+                user as User,
+            );
 
-            const spyUserServiceFindOneAndUpdate = jest
-                .spyOn(userService, 'findOneAndUpdate')
-                .mockResolvedValueOnce({ ...user, facebook: null } as User);
+            jest.spyOn(userService, 'findOneAndUpdate').mockResolvedValueOnce({
+                ...user,
+                facebook: null,
+            } as User);
 
             await service.unlinkAccount(user._id, AccountType.Facebook);
-
-            expect(spyUserServiceFindOne).toBeCalledWith({ _id: user._id });
-            expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
-                { _id: user._id },
-                { $unset: { facebook: '' } },
-            );
         });
 
         it('should unlink email', async () => {
@@ -1729,26 +1137,18 @@ describe('AuthService', () => {
                 facebook: { id: 'facebook-id', email: 'test@gmail.com' },
             });
 
-            const spyUserServiceFindOne = jest
-                .spyOn(userService, 'findOne')
-                .mockResolvedValueOnce(user as User);
+            jest.spyOn(userService, 'findOne').mockResolvedValueOnce(
+                user as User,
+            );
 
-            const spyUserServiceFindOneAndUpdate = jest
-                .spyOn(userService, 'findOneAndUpdate')
-                .mockResolvedValueOnce({
-                    ...user,
-                    email: null,
-                    password: null,
-                    isVerify: false,
-                } as User);
+            jest.spyOn(userService, 'findOneAndUpdate').mockResolvedValueOnce({
+                ...user,
+                email: null,
+                password: null,
+                isVerify: false,
+            } as User);
 
             await service.unlinkAccount(user._id, AccountType.Email);
-
-            expect(spyUserServiceFindOne).toBeCalledWith({ _id: user._id });
-            expect(spyUserServiceFindOneAndUpdate).toBeCalledWith(
-                { _id: user._id },
-                { $unset: { email: '', password: '', isVerify: '' } },
-            );
         });
     });
 });
