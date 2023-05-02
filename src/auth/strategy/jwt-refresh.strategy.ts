@@ -18,7 +18,7 @@ export class JwtRefreshStrategy extends PassportStrategy(
         });
     }
 
-    validate(
+    public validate(
         req: Request,
         payload: Payload,
     ): (Payload & { refreshToken: string }) | HttpException {

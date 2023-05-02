@@ -37,7 +37,7 @@ export type DecodedToken = {
     exp: number;
 };
 
-export type UserProfileSerializated = {
+export type SerializatedUser = {
     _id: string;
     name: string;
     email?: string;

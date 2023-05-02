@@ -15,7 +15,6 @@ export class AuthGoogleService {
         this.clientSecret = this.configService.get<string>(
             'auth.google.clientSecret',
         );
-
         this.oauthClient = new google.auth.OAuth2(
             this.clientId,
             this.clientSecret,
@@ -37,6 +36,7 @@ export class AuthGoogleService {
 
             // Revoke google access token, using only one time to get userInfo
             await this.oauthClient.revokeToken(token);
+
             return userResponse.data as ThirdPartyAccountInfo;
         } catch (error) {
             return undefined;

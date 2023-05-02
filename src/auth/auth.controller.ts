@@ -1,7 +1,6 @@
 import {
     Body,
     Controller,
-    Delete,
     Get,
     HttpCode,
     HttpStatus,
@@ -15,18 +14,16 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
-import { JwtAccessGuard } from '../common/guards';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { AuthService } from './auth.service';
 import { RequestWithParsedPayload } from './auth.type';
-import { DeleteAccountDto } from './dto/delete-account.dto';
 import { DisconnectAccountDto } from './dto/disconnect-account.dto';
-import { FacebookDto } from './dto/facebook.dto';
+import { FacebookAuthDto } from './dto/facebook-auth.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
-import { GoogleDto } from './dto/google.dto';
+import { GoogleAuthDto } from './dto/google-auth.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { SigninEmailDto } from './dto/signin-email.dto';
 import { SignupDto } from './dto/signup.dto';
-import { UpdateAccountDto } from './dto/update-account.dto';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 
 @ApiTags('auth')
@@ -61,15 +58,8 @@ export class AuthController {
         return this.authService.refreshTokens(req, res);
     }
 
-    @Get('account')
-    @UseGuards(JwtAccessGuard)
-    @HttpCode(HttpStatus.OK)
-    accountInfo(@Req() req: RequestWithParsedPayload) {
-        return this.authService.accountInfo(req.user.userId);
-    }
-
     @Patch('password')
-    @UseGuards(JwtAccessGuard)
+    @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
     updatePassword(
         @Req() req: RequestWithParsedPayload,
@@ -82,18 +72,8 @@ export class AuthController {
         );
     }
 
-    @Delete('account')
-    @UseGuards(JwtAccessGuard)
-    @HttpCode(HttpStatus.OK)
-    deleteAccount(
-        @Req() { user }: RequestWithParsedPayload,
-        @Body() deleteAccountDto: DeleteAccountDto,
-    ) {
-        return this.authService.deleteAccount(user.userId, deleteAccountDto);
-    }
-
     @Get('verify')
-    @UseGuards(JwtAccessGuard)
+    @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
     verifyEmail(@Req() { user }: RequestWithParsedPayload) {
         return this.authService.verifyEmail(user.userId);
@@ -124,7 +104,7 @@ export class AuthController {
     }
 
     @Post('signout')
-    @UseGuards(JwtAccessGuard)
+    @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
     signout(
         @Req() req: RequestWithParsedPayload,
@@ -133,34 +113,21 @@ export class AuthController {
         return this.authService.signout(req.user.userId, res);
     }
 
-    @Put('account')
-    @UseGuards(JwtAccessGuard)
-    @HttpCode(HttpStatus.OK)
-    updateAccountInfo(
-        @Req() req: RequestWithParsedPayload,
-        @Body() updateAccountInfoDto: UpdateAccountDto,
-    ) {
-        return this.authService.updateAccountInfo(
-            req.user.userId,
-            updateAccountInfoDto,
-        );
-    }
-
     @Post('google')
     @HttpCode(HttpStatus.OK)
     googleSignIn(
-        @Body() googleDto: GoogleDto,
+        @Body() googleDto: GoogleAuthDto,
         @Res({ passthrough: true }) res: Response,
     ) {
         return this.authService.googleSignIn(googleDto.accessToken, res);
     }
 
     @Put('connect-google')
-    @UseGuards(JwtAccessGuard)
+    @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
     connectGoogle(
         @Req() req: RequestWithParsedPayload,
-        @Body() googleDto: GoogleDto,
+        @Body() googleDto: GoogleAuthDto,
     ) {
         return this.authService.connectGoogle(
             req.user.userId,
@@ -171,18 +138,18 @@ export class AuthController {
     @Post('facebook')
     @HttpCode(HttpStatus.OK)
     facebookSignIn(
-        @Body() facebookDto: FacebookDto,
+        @Body() facebookDto: FacebookAuthDto,
         @Res({ passthrough: true }) res: Response,
     ) {
         return this.authService.facebookSignIn(facebookDto.accessToken, res);
     }
 
     @Put('connect-facebook')
-    @UseGuards(JwtAccessGuard)
+    @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
     connectFacebook(
         @Req() req: RequestWithParsedPayload,
-        @Body() facebookDto: FacebookDto,
+        @Body() facebookDto: FacebookAuthDto,
     ) {
         return this.authService.connectFacebook(
             req.user.userId,
@@ -191,7 +158,7 @@ export class AuthController {
     }
 
     @Put('connect-email')
-    @UseGuards(JwtAccessGuard)
+    @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
     connectEmail(
         @Req() req: RequestWithParsedPayload,
@@ -201,7 +168,7 @@ export class AuthController {
     }
 
     @Put('unlink-account')
-    @UseGuards(JwtAccessGuard)
+    @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
     unlinkAccount(
         @Req() req: RequestWithParsedPayload,

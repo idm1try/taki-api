@@ -8,7 +8,9 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { plainToInstance } from 'class-transformer';
 import { Request, Response } from 'express';
+import { UserProfileSerialization } from '../user/serialization/user-profile.serialization';
 import { Hashing } from '../common/helpers';
 import { KeyService } from '../key/key.service';
 import { MailService } from '../mail/mail.service';
@@ -21,7 +23,7 @@ import {
     DecodedToken,
     Payload,
     Tokens,
-    UserProfileSerializated,
+    SerializatedUser,
 } from './auth.type';
 import { SigninEmailDto } from './dto/signin-email.dto';
 import { SignupDto } from './dto/signup.dto';
@@ -64,11 +66,13 @@ export class AuthService {
     private async _signTokens(payload: Payload): Promise<Tokens> {
         const [accessToken, refreshToken] = await Promise.all([
             this.jwtService.signAsync(payload, {
-                secret: this.configService.get('auth.jwt.accessSecret'),
+                secret: this.configService.get<string>('auth.jwt.accessSecret'),
                 expiresIn: 60 * 15, // 15 minutes
             }),
             this.jwtService.signAsync(payload, {
-                secret: this.configService.get('auth.jwt.refreshSecret'),
+                secret: this.configService.get<string>(
+                    'auth.jwt.refreshSecret',
+                ),
                 expiresIn: 60 * 60 * 24 * 7, // 7 days
             }),
         ]);
@@ -79,7 +83,7 @@ export class AuthService {
     public async signup(
         signupDto: SignupDto,
         response: Response,
-    ): Promise<{ user: UserProfileSerializated; accessToken: string }> {
+    ): Promise<{ user: SerializatedUser; accessToken: string }> {
         const isExistUserWithEmail = await this.userService.findOne({
             email: signupDto.email,
         });
@@ -101,7 +105,10 @@ export class AuthService {
             response,
         });
 
-        const serializatedUser = this.userService.serializationUser(user);
+        const serializatedUser = plainToInstance(
+            UserProfileSerialization,
+            user,
+        );
 
         this.mailService.signupSuccess(user.email, user.name);
 
@@ -111,7 +118,7 @@ export class AuthService {
     public async signin(
         signinEmailDto: SigninEmailDto,
         response: Response,
-    ): Promise<{ user: UserProfileSerializated; accessToken: string }> {
+    ): Promise<{ user: SerializatedUser; accessToken: string }> {
         const user = await this.userService.findOne({
             email: signinEmailDto.email,
         });
@@ -137,9 +144,12 @@ export class AuthService {
             response,
         });
 
-        const userInfo = this.userService.serializationUser(user);
+        const serializatedUser = plainToInstance(
+            UserProfileSerialization,
+            user,
+        );
 
-        return { user: userInfo, accessToken: tokens.accessToken };
+        return { user: serializatedUser, accessToken: tokens.accessToken };
     }
 
     public async refreshTokens(
@@ -328,7 +338,7 @@ export class AuthService {
     public async googleSignIn(
         googleAccessToken: string,
         response: Response,
-    ): Promise<{ user: UserProfileSerializated; accessToken: string }> {
+    ): Promise<{ user: SerializatedUser; accessToken: string }> {
         const googleUserInfo = await this.authGoogleService.verify(
             googleAccessToken,
         );
@@ -361,9 +371,12 @@ export class AuthService {
             response,
         });
 
-        const userInfo = this.userService.serializationUser(user);
+        const serializatedUser = plainToInstance(
+            UserProfileSerialization,
+            user,
+        );
 
-        return { user: userInfo, accessToken: tokens.accessToken };
+        return { user: serializatedUser, accessToken: tokens.accessToken };
     }
 
     public async connectGoogle(
@@ -403,7 +416,7 @@ export class AuthService {
     public async facebookSignIn(
         facebookAccessToken: string,
         response: Response,
-    ): Promise<{ user: UserProfileSerializated; accessToken: string }> {
+    ): Promise<{ user: SerializatedUser; accessToken: string }> {
         const facebookUserInfo = await this.authFacebookService.verify(
             facebookAccessToken,
         );
@@ -436,9 +449,12 @@ export class AuthService {
             response,
         });
 
-        const userInfo = this.userService.serializationUser(user);
+        const serializatedUser = plainToInstance(
+            UserProfileSerialization,
+            user,
+        );
 
-        return { user: userInfo, accessToken: tokens.accessToken };
+        return { user: serializatedUser, accessToken: tokens.accessToken };
     }
 
     public async connectFacebook(

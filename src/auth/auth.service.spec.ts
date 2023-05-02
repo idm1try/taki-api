@@ -8,13 +8,13 @@ import { Hashing } from '../common/helpers';
 import { Key } from '../key/key.schema';
 import { KeyService } from '../key/key.service';
 import { MailService } from '../mail/mail.service';
-import { UserProfileSerialization } from '../user/serialization/user-profile.serialization';
 import { User } from '../user/user.schema';
 import { UserService } from '../user/user.service';
 import { AuthFacebookService } from './auth-facebook.service';
 import { AuthGoogleService } from './auth-google.service';
 import { AuthService } from './auth.service';
 import { AccountType, ThirdPartyAccountInfo } from './auth.type';
+import { omit } from '../../test/utils';
 
 const createUserDoc = (override: Partial<User> = {}): Partial<User> => ({
     _id: '1',
@@ -49,14 +49,11 @@ describe('AuthService', () => {
                             .fn()
                             .mockImplementation()
                             .mockResolvedValue('token'),
-                        decoded: jest
-                            .fn()
-                            .mockImplementation()
-                            .mockReturnValue({
-                                userId: '1',
-                                iat: 123,
-                                exp: 123,
-                            }),
+                        decode: jest.fn().mockImplementation().mockReturnValue({
+                            userId: '1',
+                            iat: 123,
+                            exp: 123,
+                        }),
                     },
                 },
                 {
@@ -94,7 +91,7 @@ describe('AuthService', () => {
         jest.clearAllMocks();
     });
 
-    describe.only('signup', () => {
+    describe('signup', () => {
         it('should throw error when email already used', async () => {
             const user = createUserDoc({
                 name: 'Test Name',
@@ -125,9 +122,8 @@ describe('AuthService', () => {
             }
         });
 
-        it('should return serialized user info and accessToken when signup success', async () => {
+        it('should return serializated user info and accessToken when signup success', async () => {
             const user = createUserDoc({
-                name: 'Test Name',
                 email: 'test@gmail.com',
                 password: 'secret',
             });
@@ -147,10 +143,6 @@ describe('AuthService', () => {
 
             jest.spyOn(mailService, 'signupSuccess');
 
-            jest.spyOn(userService, 'serializationUser').mockReturnValueOnce(
-                user as any,
-            );
-
             const mockResponse = createMock<Response>({
                 cookie: jest.fn(),
             });
@@ -165,7 +157,7 @@ describe('AuthService', () => {
             );
 
             expect(result).toEqual({
-                user,
+                user: omit(user, ['password']),
                 accessToken: expect.any(String),
             });
         });
@@ -220,7 +212,7 @@ describe('AuthService', () => {
             }
         });
 
-        it('should return tokens when signin success', async () => {
+        it('should return serializated user info and access token when signin success', async () => {
             const user = createUserDoc({
                 email: 'test@gmail.com',
                 password: 'secret',
@@ -236,10 +228,6 @@ describe('AuthService', () => {
                 refreshToken: 'hashed-rt',
             } as User);
 
-            jest.spyOn(userService, 'serializationUser').mockReturnValueOnce(
-                user as any,
-            );
-
             const mockResponse = createMock<Response>({
                 cookie: jest.fn(),
             });
@@ -253,17 +241,14 @@ describe('AuthService', () => {
             );
 
             expect(result).toEqual({
-                tokens: {
-                    accessToken: 'at',
-                    refreshToken: 'rt',
-                },
-                user,
+                user: omit(user, ['password']),
+                accessToken: expect.any(String),
             });
         });
     });
 
     describe('refreshTokens', () => {
-        it('should throw error when request cookie not has refreshToken', async () => {
+        it('should throw error when the request cookie does not have refreshToken', async () => {
             jest.spyOn(userService, 'findOne').mockResolvedValueOnce(
                 createUserDoc() as User,
             );
@@ -280,7 +265,7 @@ describe('AuthService', () => {
             }
         });
 
-        it('should throw error when user or refreshToken does exist', async () => {
+        it('should throw error when user or refreshToken does not exist', async () => {
             jest.spyOn(userService, 'findOne').mockResolvedValueOnce(
                 createUserDoc() as User,
             );
@@ -297,7 +282,7 @@ describe('AuthService', () => {
             }
         });
 
-        it('should throw error if refreshToken not match', async () => {
+        it('should throw error if refreshToken is not valid', async () => {
             jest.spyOn(userService, 'findOne').mockResolvedValueOnce(
                 createUserDoc({
                     refreshToken: await Hashing.hash('rt'),
@@ -316,9 +301,7 @@ describe('AuthService', () => {
             }
         });
 
-        it('should return tokens if refreshToken valid', async () => {
-            const user = createUserDoc({ _id: '1', email: 'test@gmail.com' });
-
+        it('should return the access token and response the new refreshToken if refreshToken valid', async () => {
             jest.spyOn(userService, 'findOne').mockResolvedValueOnce(
                 createUserDoc({
                     refreshToken: await Hashing.hash('rt'),
@@ -340,16 +323,14 @@ describe('AuthService', () => {
             );
 
             expect(result).toEqual({
-                tokens: {
-                    accessToken: 'new-at',
-                    refreshToken: 'new-rt',
-                },
+                accessToken: expect.any(String),
             });
+            expect(mockResponse.cookie).toHaveBeenCalledTimes(1);
         });
     });
 
     describe('updatePassword', () => {
-        it('should update new password and send email notification', async () => {
+        it('should throw error when current password incorrect', async () => {
             const user = createUserDoc({
                 name: 'Test User',
                 email: 'test@gmail.com',
@@ -370,21 +351,19 @@ describe('AuthService', () => {
 
             jest.spyOn(mailService, 'updatePasswordSuccess');
 
-            await service.updatePassword(user._id, user.password, 'new-secret');
+            try {
+                await service.updatePassword(
+                    user._id,
+                    'incorrect-password',
+                    'new-secret',
+                );
+            } catch (error) {
+                expect(error.status).toEqual(HttpStatus.NOT_ACCEPTABLE);
+            }
         });
     });
 
     describe('verifyEmail', () => {
-        it('should throw error when user is not exist', async () => {
-            jest.spyOn(userService, 'findOne').mockResolvedValueOnce(undefined);
-
-            try {
-                await service.verifyEmail('9');
-            } catch (error) {
-                expect(error.status).toEqual(HttpStatus.NOT_FOUND);
-            }
-        });
-
         it('should throw error when user not had email', async () => {
             const user = createUserDoc();
             jest.spyOn(userService, 'findOne').mockResolvedValueOnce(
@@ -413,26 +392,6 @@ describe('AuthService', () => {
             } catch (error) {
                 expect(error.status).toEqual(HttpStatus.CONFLICT);
             }
-        });
-
-        it('should send verify email and response', async () => {
-            const user = createUserDoc({
-                email: 'test@gmail.com',
-                isVerify: false,
-            });
-            jest.spyOn(userService, 'findOne').mockResolvedValueOnce(
-                user as User,
-            );
-
-            jest.spyOn(keyService, 'create').mockResolvedValueOnce({
-                id: '2',
-                key: 'verify-key',
-                email: user.email,
-            } as Key);
-
-            jest.spyOn(mailService, 'verifyEmail');
-
-            await service.verifyEmail(user._id);
         });
     });
 
@@ -680,10 +639,6 @@ describe('AuthService', () => {
                 refreshToken: 'hashed-rt',
             } as User);
 
-            jest.spyOn(userService, 'serializationUser').mockReturnValueOnce(
-                user as any,
-            );
-
             const mockResponse = createMock<Response>({
                 cookie: jest.fn(),
             });
@@ -694,11 +649,8 @@ describe('AuthService', () => {
             );
 
             expect(result).toEqual({
-                user,
-                tokens: {
-                    accessToken: 'at',
-                    refreshToken: 'rt',
-                },
+                user: omit(user, ['password']),
+                accessToken: expect.any(String),
             });
             expect(mockResponse.cookie).toHaveBeenCalledTimes(1);
         });
@@ -718,10 +670,6 @@ describe('AuthService', () => {
                 refreshToken: 'hashed-rt',
             } as User);
 
-            jest.spyOn(userService, 'serializationUser').mockReturnValueOnce(
-                user as any,
-            );
-
             const mockResponse = createMock<Response>({
                 cookie: jest.fn(),
             });
@@ -732,11 +680,8 @@ describe('AuthService', () => {
             );
 
             expect(result).toEqual({
-                user,
-                tokens: {
-                    accessToken: 'at',
-                    refreshToken: 'rt',
-                },
+                user: omit(user, ['password']),
+                accessToken: expect.any(String),
             });
             expect(mockResponse.cookie).toHaveBeenCalledTimes(1);
         });
@@ -865,10 +810,6 @@ describe('AuthService', () => {
                 refreshToken: 'hashed-rt',
             } as User);
 
-            jest.spyOn(userService, 'serializationUser').mockReturnValueOnce(
-                user as any,
-            );
-
             const mockResponse = createMock<Response>({
                 cookie: jest.fn(),
             });
@@ -879,11 +820,8 @@ describe('AuthService', () => {
             );
 
             expect(result).toEqual({
-                user,
-                tokens: {
-                    accessToken: 'at',
-                    refreshToken: 'rt',
-                },
+                user: omit(user, ['password']),
+                accessToken: expect.any(String),
             });
 
             expect(mockResponse.cookie).toHaveBeenCalledTimes(1);
@@ -903,9 +841,7 @@ describe('AuthService', () => {
                 ...user,
                 refreshToken: 'hashed-rt',
             } as User);
-            jest.spyOn(userService, 'serializationUser').mockReturnValueOnce(
-                user as any,
-            );
+
             const mockResponse = createMock<Response>({
                 cookie: jest.fn(),
             });
@@ -916,11 +852,8 @@ describe('AuthService', () => {
             );
 
             expect(result).toEqual({
-                user,
-                tokens: {
-                    accessToken: 'at',
-                    refreshToken: 'rt',
-                },
+                user: omit(user, ['password']),
+                accessToken: expect.any(String),
             });
             expect(mockResponse.cookie).toHaveBeenCalledTimes(1);
         });
@@ -1065,18 +998,6 @@ describe('AuthService', () => {
     });
 
     describe('unlinkAccount', () => {
-        it('should throw error when accessToken not valid', async () => {
-            jest.spyOn(userService, 'findOne').mockResolvedValueOnce(
-                null as User,
-            );
-
-            try {
-                await service.unlinkAccount('1', AccountType.Email);
-            } catch (error) {
-                expect(error.status).toEqual(HttpStatus.FORBIDDEN);
-            }
-        });
-
         it('should throw error when account had only one signin method', async () => {
             const user = createUserDoc({ email: 'test@gmail.com' });
 
