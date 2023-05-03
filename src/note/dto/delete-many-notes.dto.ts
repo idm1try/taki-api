@@ -1,4 +1,4 @@
-import { IsString } from 'class-validator';
+import { IsString } from "class-validator";
 
 export class DeleteManyNotesDto {
     @IsString({ each: true })

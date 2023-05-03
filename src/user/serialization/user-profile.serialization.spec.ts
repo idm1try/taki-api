@@ -1,16 +1,16 @@
-import { plainToInstance } from 'class-transformer';
-import { Types } from 'mongoose';
-import { User } from '../user.schema';
-import { UserProfileSerialization } from './user-profile.serialization';
+import { plainToInstance } from "class-transformer";
+import { Types } from "mongoose";
+import { User } from "../user.schema";
+import { UserProfileSerialization } from "./user-profile.serialization";
 
-describe('user-profile.serialization', () => {
-    it('should serialization user info', () => {
+describe("user-profile.serialization", () => {
+    it("should serialization user info", () => {
         const userInfo: Partial<User> = {
             _id: new Types.ObjectId(),
-            name: 'Test User',
-            email: 'test@gmail.com',
-            password: 'hashed-secret',
-            refreshToken: 'hashed-rt',
+            name: "Test User",
+            email: "test@gmail.com",
+            password: "hashed-secret",
+            refreshToken: "hashed-rt",
         };
 
         const serializationedUserInfo = plainToInstance(
@@ -18,7 +18,7 @@ describe('user-profile.serialization', () => {
             userInfo,
         );
 
-        expect(serializationedUserInfo).not.toHaveProperty('password');
-        expect(serializationedUserInfo).not.toHaveProperty('refreshToken');
+        expect(serializationedUserInfo).not.toHaveProperty("password");
+        expect(serializationedUserInfo).not.toHaveProperty("refreshToken");
     });
 });

@@ -8,14 +8,14 @@ import {
     Patch,
     Req,
     UseGuards,
-} from '@nestjs/common';
-import { RequestWithParsedPayload } from '../auth/auth.type';
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-import { DeleteUserDto } from './dto/delete-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { UserService } from './user.service';
+} from "@nestjs/common";
+import { RequestWithParsedPayload } from "../auth/auth.type";
+import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
+import { DeleteUserDto } from "./dto/delete-user.dto";
+import { UpdateUserDto } from "./dto/update-user.dto";
+import { UserService } from "./user.service";
 
-@Controller('user')
+@Controller("user")
 export class UserController {
     constructor(private readonly userService: UserService) {}
 

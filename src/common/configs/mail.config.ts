@@ -1,6 +1,6 @@
-import { registerAs } from '@nestjs/config';
+import { registerAs } from "@nestjs/config";
 
-export default registerAs('mail', () => ({
+export default registerAs("mail", () => ({
     logoUrl: process.env.MAIL_LOGO_URL,
     callbackVerifyUrl: process.env.MAIL_CALLBACK_VERIFY_URL,
     callbackResetUrl: process.env.MAIL_CALLBACK_RESET_URL,

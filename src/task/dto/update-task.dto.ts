@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty } from "@nestjs/swagger";
 import {
     IsBoolean,
     IsEnum,
@@ -7,8 +7,8 @@ import {
     IsOptional,
     IsString,
     Length,
-} from 'class-validator';
-import { PriorityLevel } from '../task.type';
+} from "class-validator";
+import { PriorityLevel } from "../task.type";
 
 export class UpdateTaskDto {
     @IsOptional()

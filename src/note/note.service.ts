@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { CreateNoteDto } from './dto/create-note.dto';
-import { UpdateNoteDto } from './dto/update-note.dto';
-import { Note } from './note.schema';
+import { Injectable } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model } from "mongoose";
+import { CreateNoteDto } from "./dto/create-note.dto";
+import { UpdateNoteDto } from "./dto/update-note.dto";
+import { Note } from "./note.schema";
 
 @Injectable()
 export class NoteService {
@@ -52,7 +52,7 @@ export class NoteService {
     ): Promise<Note> {
         return this.noteModel
             .findOneAndUpdate({ _id: noteId, user: userId }, updateNoteDto, {
-                returnDocument: 'after',
+                returnDocument: "after",
             })
             .exec();
     }

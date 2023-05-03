@@ -1,8 +1,8 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
-import { User } from '../user/user.schema';
-import { PriorityLevel } from './task.type';
-import { Transform } from 'class-transformer';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { Document, Types } from "mongoose";
+import { User } from "../user/user.schema";
+import { PriorityLevel } from "./task.type";
+import { Transform } from "class-transformer";
 
 @Schema({ timestamps: true })
 export class Task extends Document {

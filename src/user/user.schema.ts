@@ -1,6 +1,6 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
-import { Hashing } from '../common/helpers';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { Document } from "mongoose";
+import { Hashing } from "../common/helpers";
 
 @Schema({ timestamps: true })
 export class User extends Document {
@@ -40,7 +40,7 @@ export class User extends Document {
 
 const UserSchema = SchemaFactory.createForClass(User);
 
-UserSchema.pre('save', async function (this: User, next) {
+UserSchema.pre("save", async function (this: User, next) {
     if (this.password) {
         this.password = await Hashing.hash(this.password);
     }

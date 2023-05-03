@@ -1,4 +1,4 @@
-import { Request } from 'express';
+import { Request } from "express";
 
 export type Payload = {
     userId: string;
@@ -20,9 +20,9 @@ export type RequestWithParsedPayload = {
 } & Request;
 
 export enum AccountType {
-    Email = 'email',
-    Facebook = 'facebook',
-    Google = 'google',
+    Email = "email",
+    Facebook = "facebook",
+    Google = "google",
 }
 
 export type ThirdPartyAccountInfo = {

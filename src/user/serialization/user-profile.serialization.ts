@@ -1,4 +1,4 @@
-import { Exclude, Type } from 'class-transformer';
+import { Exclude, Type } from "class-transformer";
 
 export class UserProfileSerialization {
     @Type(() => String)

@@ -1,1 +1,1 @@
-export * from './hashing.helper';
+export * from "./hashing.helper";

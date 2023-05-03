@@ -3,22 +3,22 @@ import {
     ForbiddenException,
     Injectable,
     NotFoundException,
-} from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { plainToInstance } from 'class-transformer';
+} from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import { plainToInstance } from "class-transformer";
 import {
     FilterQuery,
     Model,
     SchemaDefinitionType,
     UpdateQuery,
-} from 'mongoose';
-import { SerializatedUser } from '../auth/auth.type';
-import { Hashing } from '../common/helpers';
-import { MailService } from '../mail/mail.service';
-import { DeleteUserDto } from './dto/delete-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { UserProfileSerialization } from './serialization/user-profile.serialization';
-import { User } from './user.schema';
+} from "mongoose";
+import { SerializatedUser } from "../auth/auth.type";
+import { Hashing } from "../common/helpers";
+import { MailService } from "../mail/mail.service";
+import { DeleteUserDto } from "./dto/delete-user.dto";
+import { UpdateUserDto } from "./dto/update-user.dto";
+import { UserProfileSerialization } from "./serialization/user-profile.serialization";
+import { User } from "./user.schema";
 
 @Injectable()
 export class UserService {
@@ -41,7 +41,7 @@ export class UserService {
     public async getUserProfile(userId: string): Promise<SerializatedUser> {
         const user = await this.userModel.findById(userId);
         if (!user) {
-            throw new NotFoundException('User not found');
+            throw new NotFoundException("User not found");
         }
 
         return plainToInstance(UserProfileSerialization, user.toObject());
@@ -69,7 +69,7 @@ export class UserService {
 
             if (user && user._id.toString() !== userId) {
                 throw new ConflictException(
-                    'New email is being used by another account',
+                    "New email is being used by another account",
                 );
             }
         }
@@ -84,7 +84,7 @@ export class UserService {
         const user = await this.userModel.findById(userId);
 
         if (!user) {
-            throw new NotFoundException('User is not exist');
+            throw new NotFoundException("User is not exist");
         }
 
         const isMatchedPassword = await Hashing.verify(
@@ -92,7 +92,7 @@ export class UserService {
             deleteUserDto.password,
         );
         if (!isMatchedPassword) {
-            throw new ForbiddenException('Password does not match');
+            throw new ForbiddenException("Password does not match");
         }
 
         const deletedAccount = await user.deleteOne();

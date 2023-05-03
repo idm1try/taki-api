@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import {
     MongooseModuleOptions,
     MongooseOptionsFactory,
-} from '@nestjs/mongoose';
+} from "@nestjs/mongoose";
 
 @Injectable()
 export class MongooseConfigService implements MongooseOptionsFactory {
@@ -11,8 +11,8 @@ export class MongooseConfigService implements MongooseOptionsFactory {
 
     createMongooseOptions(): MongooseModuleOptions {
         return {
-            uri: this.configService.get<string>('mongo.uri'),
-            dbName: this.configService.get<string>('mongo.dbName'),
+            uri: this.configService.get<string>("mongo.uri"),
+            dbName: this.configService.get<string>("mongo.dbName"),
         } as MongooseModuleOptions;
     }
 }

@@ -1,19 +1,19 @@
-import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { Auth, google } from 'googleapis';
-import { ThirdPartyAccountInfo } from './auth.type';
+import { Injectable } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { Auth, google } from "googleapis";
+import { ThirdPartyAccountInfo } from "./auth.type";
 
 @Injectable()
 export class AuthGoogleService {
     private clientId: string;
     private clientSecret: string;
     private oauthClient: Auth.OAuth2Client;
-    private userInfoClient = google.oauth2('v2').userinfo;
+    private userInfoClient = google.oauth2("v2").userinfo;
 
     constructor(private readonly configService: ConfigService) {
-        this.clientId = this.configService.get<string>('auth.google.clientId');
+        this.clientId = this.configService.get<string>("auth.google.clientId");
         this.clientSecret = this.configService.get<string>(
-            'auth.google.clientSecret',
+            "auth.google.clientSecret",
         );
         this.oauthClient = new google.auth.OAuth2(
             this.clientId,
@@ -31,7 +31,7 @@ export class AuthGoogleService {
 
             const userResponse = await this.userInfoClient.get({
                 auth: this.oauthClient,
-                fields: 'id,name,email',
+                fields: "id,name,email",
             });
 
             // Revoke google access token, using only one time to get userInfo

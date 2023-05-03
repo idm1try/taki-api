@@ -11,27 +11,27 @@ import {
     Req,
     Res,
     UseGuards,
-} from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
-import { Request, Response } from 'express';
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-import { AuthService } from './auth.service';
-import { RequestWithParsedPayload } from './auth.type';
-import { DisconnectAccountDto } from './dto/disconnect-account.dto';
-import { FacebookAuthDto } from './dto/facebook-auth.dto';
-import { ForgotPasswordDto } from './dto/forgot-password.dto';
-import { GoogleAuthDto } from './dto/google-auth.dto';
-import { ResetPasswordDto } from './dto/reset-password.dto';
-import { SigninEmailDto } from './dto/signin-email.dto';
-import { SignupDto } from './dto/signup.dto';
-import { UpdatePasswordDto } from './dto/update-password.dto';
+} from "@nestjs/common";
+import { ApiTags } from "@nestjs/swagger";
+import { Request, Response } from "express";
+import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
+import { AuthService } from "./auth.service";
+import { RequestWithParsedPayload } from "./auth.type";
+import { DisconnectAccountDto } from "./dto/disconnect-account.dto";
+import { FacebookAuthDto } from "./dto/facebook-auth.dto";
+import { ForgotPasswordDto } from "./dto/forgot-password.dto";
+import { GoogleAuthDto } from "./dto/google-auth.dto";
+import { ResetPasswordDto } from "./dto/reset-password.dto";
+import { SigninEmailDto } from "./dto/signin-email.dto";
+import { SignupDto } from "./dto/signup.dto";
+import { UpdatePasswordDto } from "./dto/update-password.dto";
 
-@ApiTags('auth')
-@Controller('auth')
+@ApiTags("auth")
+@Controller("auth")
 export class AuthController {
     constructor(private readonly authService: AuthService) {}
 
-    @Post('signup')
+    @Post("signup")
     @HttpCode(HttpStatus.CREATED)
     signup(
         @Body() signupDto: SignupDto,
@@ -40,7 +40,7 @@ export class AuthController {
         return this.authService.signup(signupDto, res);
     }
 
-    @Post('signin')
+    @Post("signin")
     @HttpCode(HttpStatus.OK)
     signin(
         @Body() signinEmailDto: SigninEmailDto,
@@ -49,7 +49,7 @@ export class AuthController {
         return this.authService.signin(signinEmailDto, res);
     }
 
-    @Post('refresh')
+    @Post("refresh")
     @HttpCode(HttpStatus.OK)
     refreshTokens(
         @Req() req: Request,
@@ -58,7 +58,7 @@ export class AuthController {
         return this.authService.refreshTokens(req, res);
     }
 
-    @Patch('password')
+    @Patch("password")
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
     updatePassword(
@@ -72,30 +72,30 @@ export class AuthController {
         );
     }
 
-    @Get('verify')
+    @Get("verify")
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
     verifyEmail(@Req() { user }: RequestWithParsedPayload) {
         return this.authService.verifyEmail(user.userId);
     }
 
-    @Put('verify')
+    @Put("verify")
     @HttpCode(HttpStatus.OK)
-    confirmVerifyEmail(@Query('verifyKey') verifyKey: string) {
+    confirmVerifyEmail(@Query("verifyKey") verifyKey: string) {
         return this.authService.confirmVerifyEmail(verifyKey);
     }
 
-    @Put('forgot-password')
+    @Put("forgot-password")
     @HttpCode(HttpStatus.OK)
     forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
         return this.authService.forgotPassword(forgotPasswordDto.email);
     }
 
-    @Put('password')
+    @Put("password")
     @HttpCode(HttpStatus.OK)
     resetPassword(
         @Body() resetPasswordDto: ResetPasswordDto,
-        @Query('resetPasswordKey') resetPasswordKey: string,
+        @Query("resetPasswordKey") resetPasswordKey: string,
     ) {
         return this.authService.resetPassword(
             resetPasswordKey,
@@ -103,7 +103,7 @@ export class AuthController {
         );
     }
 
-    @Post('signout')
+    @Post("signout")
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
     signout(
@@ -113,7 +113,7 @@ export class AuthController {
         return this.authService.signout(req.user.userId, res);
     }
 
-    @Post('google')
+    @Post("google")
     @HttpCode(HttpStatus.OK)
     googleSignIn(
         @Body() googleDto: GoogleAuthDto,
@@ -122,7 +122,7 @@ export class AuthController {
         return this.authService.googleSignIn(googleDto.accessToken, res);
     }
 
-    @Put('connect-google')
+    @Put("connect-google")
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
     connectGoogle(
@@ -135,7 +135,7 @@ export class AuthController {
         );
     }
 
-    @Post('facebook')
+    @Post("facebook")
     @HttpCode(HttpStatus.OK)
     facebookSignIn(
         @Body() facebookDto: FacebookAuthDto,
@@ -144,7 +144,7 @@ export class AuthController {
         return this.authService.facebookSignIn(facebookDto.accessToken, res);
     }
 
-    @Put('connect-facebook')
+    @Put("connect-facebook")
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
     connectFacebook(
@@ -157,7 +157,7 @@ export class AuthController {
         );
     }
 
-    @Put('connect-email')
+    @Put("connect-email")
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
     connectEmail(
@@ -167,7 +167,7 @@ export class AuthController {
         return this.authService.connectEmail(req.user.userId, connectEmailDto);
     }
 
-    @Put('unlink-account')
+    @Put("unlink-account")
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
     unlinkAccount(

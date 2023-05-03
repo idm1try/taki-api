@@ -1,17 +1,17 @@
-import { createMock } from '@golevelup/ts-jest';
-import { getModelToken } from '@nestjs/mongoose';
-import { Test, TestingModule } from '@nestjs/testing';
-import { Model, Query } from 'mongoose';
-import { Key } from './key.schema';
-import { KeyService } from './key.service';
+import { createMock } from "@golevelup/ts-jest";
+import { getModelToken } from "@nestjs/mongoose";
+import { Test, TestingModule } from "@nestjs/testing";
+import { Model, Query } from "mongoose";
+import { Key } from "./key.schema";
+import { KeyService } from "./key.service";
 
 const mockForgotDoc = (override: Partial<Key> = {}): Partial<Key> => ({
-    _id: '1',
-    key: 'key',
+    _id: "1",
+    key: "key",
     ...override,
 });
 
-describe('KeysService', () => {
+describe("KeysService", () => {
     let service: KeyService;
     let model: Model<Key>;
 
@@ -30,7 +30,7 @@ describe('KeysService', () => {
         model = module.get<Model<Key>>(getModelToken(Key.name));
     });
 
-    it('should be defined', () => {
+    it("should be defined", () => {
         expect(service).toBeDefined();
     });
 
@@ -38,90 +38,90 @@ describe('KeysService', () => {
         jest.clearAllMocks();
     });
 
-    describe('create', () => {
-        it('should throw error when duplicate key', async () => {
-            jest.spyOn(model, 'create').mockRejectedValueOnce(
-                new Error('duplicate') as never,
+    describe("create", () => {
+        it("should throw error when duplicate key", async () => {
+            jest.spyOn(model, "create").mockRejectedValueOnce(
+                new Error("duplicate") as never,
             );
 
             try {
-                await service.create('1');
+                await service.create("1");
             } catch (error) {
-                expect(error.message).toEqual('duplicate');
+                expect(error.message).toEqual("duplicate");
             }
         });
 
-        it('should return key', async () => {
+        it("should return key", async () => {
             const spyModelCreate = jest
-                .spyOn(model, 'create')
+                .spyOn(model, "create")
                 .mockResolvedValueOnce(mockForgotDoc() as never);
 
-            const result = await service.create('test@gmail.com');
+            const result = await service.create("test@gmail.com");
             expect(result).toEqual(mockForgotDoc());
             expect(spyModelCreate).toBeCalledWith({
-                email: 'test@gmail.com',
+                email: "test@gmail.com",
             });
         });
     });
 
-    describe('verify', () => {
-        it('should return undefined when key does not exist or invalid', async () => {
-            jest.spyOn(model, 'findOne').mockReturnValueOnce(
+    describe("verify", () => {
+        it("should return undefined when key does not exist or invalid", async () => {
+            jest.spyOn(model, "findOne").mockReturnValueOnce(
                 createMock<Query<Key, Key>>({
                     exec: jest.fn().mockResolvedValueOnce(undefined),
                 }),
             );
 
             const result = await service.verify(
-                'a-invalid-forgot-password-key',
+                "a-invalid-forgot-password-key",
             );
             expect(result).toBeUndefined();
         });
 
-        it('should return key instance when create success', async () => {
+        it("should return key instance when create success", async () => {
             const spyModelFindOne = jest
-                .spyOn(model, 'findOne')
+                .spyOn(model, "findOne")
                 .mockReturnValueOnce(
                     createMock<Query<Key, Key>>({
                         exec: jest.fn().mockResolvedValueOnce(mockForgotDoc()),
                     }),
                 );
 
-            const result = await service.verify('mock-key');
+            const result = await service.verify("mock-key");
             expect(result).toEqual(mockForgotDoc());
-            expect(spyModelFindOne).toBeCalledWith({ key: 'mock-key' });
+            expect(spyModelFindOne).toBeCalledWith({ key: "mock-key" });
         });
     });
 
-    describe('revoke', () => {
-        it('should throw error when key is not valid', async () => {
-            jest.spyOn(model, 'findOneAndRemove').mockReturnValueOnce(
+    describe("revoke", () => {
+        it("should throw error when key is not valid", async () => {
+            jest.spyOn(model, "findOneAndRemove").mockReturnValueOnce(
                 createMock<Query<Key, Key>>({
                     exec: jest
                         .fn()
                         .mockImplementationOnce(
-                            () => new Error('key not exist'),
+                            () => new Error("key not exist"),
                         ),
                 }),
             );
             try {
-                await service.revoke('invalid-key');
+                await service.revoke("invalid-key");
             } catch (error) {
-                expect(error.message).toEqual('key not exist');
+                expect(error.message).toEqual("key not exist");
             }
         });
 
-        it('should revoke if given key valid', async () => {
+        it("should revoke if given key valid", async () => {
             const spyModelFindOneAndRemove = jest
-                .spyOn(model, 'findOneAndRemove')
+                .spyOn(model, "findOneAndRemove")
                 .mockReturnValueOnce(
                     createMock<Query<Key, Key>>({
                         exec: jest.fn(),
                     }),
                 );
-            await service.revoke('valid-key');
+            await service.revoke("valid-key");
             expect(spyModelFindOneAndRemove).toBeCalledWith({
-                key: 'valid-key',
+                key: "valid-key",
             });
         });
     });

@@ -13,17 +13,17 @@ import {
     Query,
     Req,
     UseGuards,
-} from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
-import { RequestWithParsedPayload } from '../auth/auth.type';
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-import { CreateTaskDto } from './dto/create-task.dto';
-import { DeleteManyTasksDto } from './dto/delete-many-tasks.dto';
-import { UpdateTaskDto } from './dto/update-task.dto';
-import { TaskService } from './task.service';
+} from "@nestjs/common";
+import { ApiTags } from "@nestjs/swagger";
+import { RequestWithParsedPayload } from "../auth/auth.type";
+import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
+import { CreateTaskDto } from "./dto/create-task.dto";
+import { DeleteManyTasksDto } from "./dto/delete-many-tasks.dto";
+import { UpdateTaskDto } from "./dto/update-task.dto";
+import { TaskService } from "./task.service";
 
-@ApiTags('tasks')
-@Controller('tasks')
+@ApiTags("tasks")
+@Controller("tasks")
 @UseGuards(JwtAuthGuard)
 export class TaskController {
     constructor(private readonly taskService: TaskService) {}
@@ -41,15 +41,15 @@ export class TaskController {
     @HttpCode(HttpStatus.OK)
     getAll(
         @Req() req: RequestWithParsedPayload,
-        @Query('skip', new DefaultValuePipe(0), ParseIntPipe) skip: number,
-        @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+        @Query("skip", new DefaultValuePipe(0), ParseIntPipe) skip: number,
+        @Query("limit", new DefaultValuePipe(20), ParseIntPipe) limit: number,
     ) {
         return this.taskService.getAll(req.user.userId, skip, limit);
     }
 
-    @Delete(':id')
+    @Delete(":id")
     @HttpCode(HttpStatus.OK)
-    deleteOne(@Req() req: RequestWithParsedPayload, @Param('id') id: string) {
+    deleteOne(@Req() req: RequestWithParsedPayload, @Param("id") id: string) {
         return this.taskService.deleteOne(req.user.userId, id);
     }
 
@@ -65,12 +65,12 @@ export class TaskController {
         );
     }
 
-    @Patch(':id')
+    @Patch(":id")
     @HttpCode(HttpStatus.OK)
     update(
         @Req() req: RequestWithParsedPayload,
         @Body() updateTaskDto: UpdateTaskDto,
-        @Param('id') id: string,
+        @Param("id") id: string,
     ) {
         return this.taskService.update(req.user.userId, id, updateTaskDto);
     }

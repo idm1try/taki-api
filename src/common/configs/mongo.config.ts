@@ -1,6 +1,6 @@
-import { registerAs } from '@nestjs/config';
+import { registerAs } from "@nestjs/config";
 
-export default registerAs('mongo', () => ({
+export default registerAs("mongo", () => ({
     uri: process.env.MONGO_URI,
     dbName: process.env.MONGO_DBNAME,
 }));

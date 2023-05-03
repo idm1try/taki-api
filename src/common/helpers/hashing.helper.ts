@@ -1,5 +1,5 @@
-import * as argon from 'argon2';
-import { randomBytes } from 'crypto';
+import * as argon from "argon2";
+import { randomBytes } from "crypto";
 
 export class Hashing {
     public static async createHash(length = 64): Promise<string> {
@@ -8,7 +8,7 @@ export class Hashing {
                 if (error) {
                     return reject(error);
                 }
-                return resolve(buffer.toString('hex'));
+                return resolve(buffer.toString("hex"));
             });
         });
     }
