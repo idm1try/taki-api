@@ -8,6 +8,8 @@ export default registerAs("app", () => ({
     host: process.env.HOST || "localhost",
     port: parseInt(process.env.PORT) || 5000,
     get domain() {
-        return `${this.scheme}://${this.host}:${this.port}`;
+        return `${this.scheme}://${this.host}${
+            this.NODE_ENV === "development" ? `:${this.port}` : ""
+        }`;
     },
 }));
