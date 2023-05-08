@@ -22,6 +22,7 @@ async function bootstrap() {
     app.useGlobalPipes(
         new ValidationPipe({
             skipMissingProperties: true,
+            whitelist: true,
         }),
     );
     app.useGlobalFilters(new AllExceptionsFilter());
