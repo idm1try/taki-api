@@ -3,15 +3,18 @@ import {
     ForbiddenException,
     Injectable,
     NotFoundException,
+    StreamableFile,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { plainToInstance } from "class-transformer";
+import * as fs from "fs";
 import {
     FilterQuery,
     Model,
     SchemaDefinitionType,
     UpdateQuery,
 } from "mongoose";
+import * as path from "path";
 import { SerializatedUser } from "../auth/auth.type";
 import { Hashing } from "../common/helpers";
 import { MailService } from "../mail/mail.service";
@@ -101,5 +104,24 @@ export class UserService {
             deletedAccount.email,
             deletedAccount.name,
         );
+    }
+
+    public async getAvatar(userId: string): Promise<StreamableFile> {
+        const user = await this.userModel.findById(userId);
+
+        const fileStream = fs.createReadStream(
+            path.join(process.cwd(), "uploads", user.avatar),
+        );
+        return new StreamableFile(fileStream, { type: "image/webp" });
+    }
+
+    public async updateAvatar({
+        userId,
+        avatar,
+    }: {
+        userId: string;
+        avatar: string;
+    }) {
+        await this.userModel.findByIdAndUpdate(userId, { avatar });
     }
 }

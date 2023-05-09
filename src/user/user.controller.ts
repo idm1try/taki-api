@@ -7,10 +7,14 @@ import {
     HttpStatus,
     Patch,
     Req,
+    UploadedFile,
     UseGuards,
+    UseInterceptors,
 } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
 import { RequestWithParsedPayload } from "../auth/auth.type";
 import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
+import { SharpPipe } from "../common/pipes/sharp.pipe";
 import { DeleteUserDto } from "./dto/delete-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { UserService } from "./user.service";
@@ -29,11 +33,32 @@ export class UserController {
     @Patch()
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
-    updateAccountInfo(
+    async updateUserInfo(
         @Req() req: RequestWithParsedPayload,
         @Body() updateUserDto: UpdateUserDto,
     ) {
         return this.userService.update(req.user.userId, updateUserDto);
+    }
+
+    @Patch("avatar")
+    @UseGuards(JwtAuthGuard)
+    @UseInterceptors(FileInterceptor("avatar"))
+    @HttpCode(HttpStatus.OK)
+    async setUserAvatar(
+        @Req() req: RequestWithParsedPayload,
+        @UploadedFile(SharpPipe) avatar: string,
+    ) {
+        return this.userService.updateAvatar({
+            userId: req.user.userId,
+            avatar,
+        });
+    }
+
+    @Get("avatar")
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    async getUserAvatar(@Req() req: RequestWithParsedPayload) {
+        return this.userService.getAvatar(req.user.userId);
     }
 
     @Delete()

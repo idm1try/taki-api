@@ -36,6 +36,9 @@ export class User extends Document {
         id: string | null;
         email: string | null;
     };
+
+    @Prop({ default: "default_avatar.webp" })
+    avatar?: string;
 }
 
 const UserSchema = SchemaFactory.createForClass(User);
