@@ -5,6 +5,7 @@ import {
     Get,
     HttpCode,
     HttpStatus,
+    Param,
     Patch,
     Req,
     UploadedFile,
@@ -54,11 +55,14 @@ export class UserController {
         });
     }
 
-    @Get("avatar")
+    @Get("avatar/:avatarFileName")
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
-    async getUserAvatar(@Req() req: RequestWithParsedPayload) {
-        return this.userService.getAvatar(req.user.userId);
+    async getUserAvatar(
+        @Req() req: RequestWithParsedPayload,
+        @Param() { avatarFileName }: { avatarFileName: string },
+    ) {
+        return this.userService.getAvatar(req.user.userId, avatarFileName);
     }
 
     @Delete()

@@ -31,3 +31,7 @@ pnpm run start:dev
 -   NodeMailer
 -   Google Auth
 -   Facebook Auth
+
+### Third Party Auth Flow
+
+![Third Party Auth Flow](./docs/third_party_auth_flow.png)

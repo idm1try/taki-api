@@ -20,13 +20,18 @@ export class AuthFacebookService {
     ): Promise<ThirdPartyAccountInfo | undefined> {
         try {
             this.fb.setAccessToken(accessToken);
-            const userInfo = await this.fb.api("me", {
-                fields: ["id", "name", "email"],
+
+            const userInfomationFromFacebook = await this.fb.api("me", {
+                fields: ["id", "name", "email", "picture"],
             });
 
-            // Revoke facebook access token after get info for security
+            // Revoke facebook access token, using only one time to get userInfo
             await this.fb.api("/me/permissions", "delete");
-            return userInfo as ThirdPartyAccountInfo;
+
+            return {
+                ...userInfomationFromFacebook,
+                picture: userInfomationFromFacebook.picture.data.url,
+            } as ThirdPartyAccountInfo;
         } catch (error) {
             return undefined;
         }

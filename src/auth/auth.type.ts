@@ -29,6 +29,7 @@ export type ThirdPartyAccountInfo = {
     id: string;
     name: string;
     email: string;
+    picture: string;
 };
 
 export type DecodedToken = {

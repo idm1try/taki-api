@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     ConflictException,
     ForbiddenException,
     Injectable,
@@ -22,12 +23,14 @@ import { DeleteUserDto } from "./dto/delete-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { UserProfileSerialization } from "./serialization/user-profile.serialization";
 import { User } from "./user.schema";
+import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class UserService {
     constructor(
         @InjectModel(User.name) private userModel: Model<User>,
         private readonly mailService: MailService,
+        private readonly configService: ConfigService,
     ) {}
 
     public async create(
@@ -106,11 +109,18 @@ export class UserService {
         );
     }
 
-    public async getAvatar(userId: string): Promise<StreamableFile> {
-        const user = await this.userModel.findById(userId);
+    public async getAvatar(
+        userId: string,
+        avatarFileName: string,
+    ): Promise<StreamableFile> {
+        const avatarId = avatarFileName.split(".")[0];
+
+        if (avatarId !== "default_avatar" && avatarId !== userId) {
+            throw new BadRequestException();
+        }
 
         const fileStream = fs.createReadStream(
-            path.join(process.cwd(), "uploads", user.avatar),
+            path.join(process.cwd(), "uploads", avatarFileName),
         );
         return new StreamableFile(fileStream, { type: "image/webp" });
     }
@@ -122,6 +132,10 @@ export class UserService {
         userId: string;
         avatar: string;
     }) {
-        await this.userModel.findByIdAndUpdate(userId, { avatar });
+        await this.userModel.findByIdAndUpdate(userId, {
+            avatar: `${this.configService.get<string>(
+                "app.domain",
+            )}/user/avatar/${avatar}`,
+        });
     }
 }

@@ -4,6 +4,7 @@ import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { Test, TestingModule } from "@nestjs/testing";
 import { Request, Response } from "express";
+import { omit } from "../../test/utils";
 import { Hashing } from "../common/helpers";
 import { Key } from "../key/key.schema";
 import { KeyService } from "../key/key.service";
@@ -14,7 +15,6 @@ import { AuthFacebookService } from "./auth-facebook.service";
 import { AuthGoogleService } from "./auth-google.service";
 import { AuthService } from "./auth.service";
 import { AccountType, ThirdPartyAccountInfo } from "./auth.type";
-import { omit } from "../../test/utils";
 
 const createUserDoc = (override: Partial<User> = {}): Partial<User> => ({
     _id: "1",

@@ -10,10 +10,10 @@ import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { plainToInstance } from "class-transformer";
 import { Request, Response } from "express";
-import { UserProfileSerialization } from "../user/serialization/user-profile.serialization";
 import { Hashing } from "../common/helpers";
 import { KeyService } from "../key/key.service";
 import { MailService } from "../mail/mail.service";
+import { UserProfileSerialization } from "../user/serialization/user-profile.serialization";
 import { User } from "../user/user.schema";
 import { UserService } from "../user/user.service";
 import { AuthFacebookService } from "./auth-facebook.service";
@@ -22,14 +22,15 @@ import {
     AccountType,
     DecodedToken,
     Payload,
-    Tokens,
     SerializatedUser,
+    Tokens,
 } from "./auth.type";
 import { SigninEmailDto } from "./dto/signin-email.dto";
 import { SignupDto } from "./dto/signup.dto";
 
 @Injectable()
 export class AuthService {
+    private readonly defaultAvatar: string;
     constructor(
         private readonly configService: ConfigService,
         private readonly userService: UserService,
@@ -38,7 +39,11 @@ export class AuthService {
         private readonly keyService: KeyService,
         private readonly authGoogleService: AuthGoogleService,
         private readonly authFacebookService: AuthFacebookService,
-    ) {}
+    ) {
+        this.defaultAvatar = this.configService.get<string>(
+            "app.defaultAvatarUrl",
+        );
+    }
 
     private async _updateRefreshToken({
         userId,
@@ -93,7 +98,10 @@ export class AuthService {
             );
         }
 
-        const user = await this.userService.create(signupDto);
+        const user = await this.userService.create({
+            ...signupDto,
+            avatar: this.defaultAvatar,
+        });
 
         const tokens = await this._signTokens({
             userId: user._id,
@@ -358,6 +366,7 @@ export class AuthService {
                     id: googleUserInfo.id,
                     email: googleUserInfo.email,
                 },
+                avatar: googleUserInfo.picture,
             });
         }
 
@@ -436,6 +445,7 @@ export class AuthService {
                     id: facebookUserInfo.id,
                     email: facebookUserInfo.email,
                 },
+                avatar: facebookUserInfo.picture,
             });
         }
 
@@ -524,7 +534,7 @@ export class AuthService {
         );
     }
 
-    private countAuthMethods(user: User): number {
+    private _countAuthMethods(user: User): number {
         let count = 0;
         if (user.email) count++;
         if (user.google?.id) count++;
@@ -535,7 +545,7 @@ export class AuthService {
     public async unlinkAccount(userId: string, accountType: AccountType) {
         const user = await this.userService.findOne({ _id: userId });
 
-        const numSigninMethods = this.countAuthMethods(user);
+        const numSigninMethods = this._countAuthMethods(user);
         if (numSigninMethods < 2) {
             throw new NotAcceptableException(
                 "Account need atleast 1 sign method",

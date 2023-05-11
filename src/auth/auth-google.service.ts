@@ -29,15 +29,15 @@ export class AuthGoogleService {
                 access_token: token,
             });
 
-            const userResponse = await this.userInfoClient.get({
+            const userInfomationFromGoogle = await this.userInfoClient.get({
                 auth: this.oauthClient,
-                fields: "id,name,email",
+                fields: "id,name,email,picture",
             });
 
             // Revoke google access token, using only one time to get userInfo
             await this.oauthClient.revokeToken(token);
 
-            return userResponse.data as ThirdPartyAccountInfo;
+            return userInfomationFromGoogle.data as ThirdPartyAccountInfo;
         } catch (error) {
             return undefined;
         }

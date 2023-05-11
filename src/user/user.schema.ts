@@ -21,6 +21,7 @@ export class User extends Document {
 
     @Prop({
         required: false,
+        _id: false,
         type: { id: String, email: String },
     })
     google?: {
@@ -30,6 +31,7 @@ export class User extends Document {
 
     @Prop({
         required: false,
+        _id: false,
         type: { id: String, email: String },
     })
     facebook?: {
@@ -37,8 +39,8 @@ export class User extends Document {
         email: string | null;
     };
 
-    @Prop({ default: "default_avatar.webp" })
-    avatar?: string;
+    @Prop()
+    avatar: string;
 }
 
 const UserSchema = SchemaFactory.createForClass(User);

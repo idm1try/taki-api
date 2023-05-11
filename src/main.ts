@@ -10,7 +10,7 @@ import { AllExceptionsFilter } from "./common/filters/all-exception.filter";
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
     const configService = app.get(ConfigService);
-    const GLOBAL_PREFIX = "api";
+    const GLOBAL_PREFIX = configService.get<string>("app.globalPrefix");
 
     app.enableCors({
         credentials: true,
@@ -39,10 +39,8 @@ async function bootstrap() {
 
     const domain = configService.get<string>("app.domain");
 
-    Logger.log(
-        `API documentations is running on ${domain}/${GLOBAL_PREFIX}/docs`,
-    );
-    Logger.log(`Application is running on ${domain}/${GLOBAL_PREFIX}`);
+    Logger.log(`API documentations is running on ${domain}/docs`);
+    Logger.log(`Application is running on ${domain}`);
 }
 
 bootstrap();
