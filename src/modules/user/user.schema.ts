@@ -40,7 +40,7 @@ export class User extends Document {
     };
 
     @Prop()
-    avatar: string;
+    avatar?: string;
 }
 
 const UserSchema = SchemaFactory.createForClass(User);

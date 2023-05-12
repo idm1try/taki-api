@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
     ConflictException,
     ForbiddenException,
     Injectable,
@@ -20,7 +21,6 @@ import { DeleteUserDto } from "./dto/delete-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { UserProfileSerialization } from "./serialization/user-profile.serialization";
 import { User } from "./user.schema";
-import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class UserService {
@@ -28,7 +28,6 @@ export class UserService {
         @InjectModel(User.name) private userModel: Model<User>,
         private readonly mailService: MailService,
         private readonly avatarService: AvatarService,
-        private readonly configService: ConfigService,
     ) {}
 
     public async create(
@@ -115,7 +114,7 @@ export class UserService {
         avatar: Express.Multer.File;
     }) {
         const user = await this.userModel.findById(userId);
-        if (user.avatar !== this.configService.get("app.defaultUserAvatar")) {
+        if (user.avatar) {
             await this.avatarService.delete(userId);
         }
 
@@ -127,10 +126,14 @@ export class UserService {
     }
 
     public async deleteAvatar(userId: string) {
-        const user = await this.userModel.findByIdAndUpdate(userId, {
-            avatar: this.configService.get("app.defaultUserAvatar"),
-        });
+        const user = await this.userModel.findById(userId);
+
+        if (!user.avatar) {
+            throw new BadRequestException("User did not have avatar to delete");
+        }
 
         await this.avatarService.delete(user._id);
+        await user.updateOne({ $unset: { avatar: "" } });
+        await user.save();
     }
 }

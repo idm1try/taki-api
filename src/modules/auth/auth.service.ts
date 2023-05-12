@@ -30,7 +30,6 @@ import { SignupDto } from "./dto/signup.dto";
 
 @Injectable()
 export class AuthService {
-    private readonly defaultAvatar: string;
     constructor(
         private readonly configService: ConfigService,
         private readonly userService: UserService,
@@ -39,11 +38,7 @@ export class AuthService {
         private readonly keyService: KeyService,
         private readonly authGoogleService: AuthGoogleService,
         private readonly authFacebookService: AuthFacebookService,
-    ) {
-        this.defaultAvatar = this.configService.get<string>(
-            "app.defaultUserAvatar",
-        );
-    }
+    ) {}
 
     private async _updateRefreshToken({
         userId,
@@ -100,7 +95,6 @@ export class AuthService {
 
         const user = await this.userService.create({
             ...signupDto,
-            avatar: this.defaultAvatar,
         });
 
         const tokens = await this._signTokens({

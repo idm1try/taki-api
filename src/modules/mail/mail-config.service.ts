@@ -20,6 +20,7 @@ export class MailConfigService implements MailerOptionsFactory {
                 dir: path.join(
                     this.configService.get("app.workdir"),
                     "src",
+                    "modules",
                     "mail",
                     "templates",
                 ),
