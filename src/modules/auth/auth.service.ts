@@ -10,7 +10,7 @@ import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { plainToInstance } from "class-transformer";
 import { Request, Response } from "express";
-import { Hashing } from "../common/helpers";
+import { Hashing } from "../../common/helpers";
 import { KeyService } from "../key/key.service";
 import { MailService } from "../mail/mail.service";
 import { UserProfileSerialization } from "../user/serialization/user-profile.serialization";
@@ -41,7 +41,7 @@ export class AuthService {
         private readonly authFacebookService: AuthFacebookService,
     ) {
         this.defaultAvatar = this.configService.get<string>(
-            "app.defaultAvatarUrl",
+            "app.defaultUserAvatar",
         );
     }
 

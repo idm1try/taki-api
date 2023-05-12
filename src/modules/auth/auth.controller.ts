@@ -14,7 +14,7 @@ import {
 } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { Request, Response } from "express";
-import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
+import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { AuthService } from "./auth.service";
 import { RequestWithParsedPayload } from "./auth.type";
 import { DisconnectAccountDto } from "./dto/disconnect-account.dto";

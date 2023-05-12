@@ -39,7 +39,3 @@ lerna-debug.log*
 .env.dev*
 .env.prod*
 .env.test*
-
-# Avatars
-uploads/*
-!uploads/default_avatar.webp

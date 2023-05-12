@@ -1,23 +1,20 @@
 import {
-    BadRequestException,
     ConflictException,
     ForbiddenException,
     Injectable,
     NotFoundException,
-    StreamableFile,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { plainToInstance } from "class-transformer";
-import * as fs from "fs";
 import {
     FilterQuery,
     Model,
     SchemaDefinitionType,
     UpdateQuery,
 } from "mongoose";
-import * as path from "path";
 import { SerializatedUser } from "../auth/auth.type";
-import { Hashing } from "../common/helpers";
+import { AvatarService } from "../avatar/avatar.service";
+import { Hashing } from "../../common/helpers";
 import { MailService } from "../mail/mail.service";
 import { DeleteUserDto } from "./dto/delete-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
@@ -30,6 +27,7 @@ export class UserService {
     constructor(
         @InjectModel(User.name) private userModel: Model<User>,
         private readonly mailService: MailService,
+        private readonly avatarService: AvatarService,
         private readonly configService: ConfigService,
     ) {}
 
@@ -109,33 +107,30 @@ export class UserService {
         );
     }
 
-    public async getAvatar(
-        userId: string,
-        avatarFileName: string,
-    ): Promise<StreamableFile> {
-        const avatarId = avatarFileName.split(".")[0];
-
-        if (avatarId !== "default_avatar" && avatarId !== userId) {
-            throw new BadRequestException();
-        }
-
-        const fileStream = fs.createReadStream(
-            path.join(process.cwd(), "uploads", avatarFileName),
-        );
-        return new StreamableFile(fileStream, { type: "image/webp" });
-    }
-
     public async updateAvatar({
         userId,
         avatar,
     }: {
         userId: string;
-        avatar: string;
+        avatar: Express.Multer.File;
     }) {
-        await this.userModel.findByIdAndUpdate(userId, {
-            avatar: `${this.configService.get<string>(
-                "app.domain",
-            )}/user/avatar/${avatar}`,
+        const user = await this.userModel.findById(userId);
+        if (user.avatar !== this.configService.get("app.defaultUserAvatar")) {
+            await this.avatarService.delete(userId);
+        }
+
+        const avatarUrl = await this.avatarService.upload({ userId, avatar });
+        user.avatar = avatarUrl;
+        await user.save();
+
+        return { avatar: avatarUrl };
+    }
+
+    public async deleteAvatar(userId: string) {
+        const user = await this.userModel.findByIdAndUpdate(userId, {
+            avatar: this.configService.get("app.defaultUserAvatar"),
         });
+
+        await this.avatarService.delete(user._id);
     }
 }

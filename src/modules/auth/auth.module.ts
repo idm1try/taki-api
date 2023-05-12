@@ -11,10 +11,13 @@ import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
 import { JwtAccessStrategy } from "./strategy/jwt-access.strategy";
 import { JwtRefreshStrategy } from "./strategy/jwt-refresh.strategy";
+import { authConfig } from "../../common/configs";
 
 @Module({
     imports: [
-        ConfigModule,
+        ConfigModule.forRoot({
+            load: [authConfig],
+        }),
         UserModule,
         PassportModule,
         JwtModule.register({}),

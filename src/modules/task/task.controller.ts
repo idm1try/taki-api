@@ -16,7 +16,7 @@ import {
 } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { RequestWithParsedPayload } from "../auth/auth.type";
-import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
+import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { CreateTaskDto } from "./dto/create-task.dto";
 import { DeleteManyTasksDto } from "./dto/delete-many-tasks.dto";
 import { UpdateTaskDto } from "./dto/update-task.dto";

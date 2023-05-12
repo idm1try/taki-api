@@ -2,10 +2,11 @@ import {
     Body,
     Controller,
     Delete,
+    FileTypeValidator,
     Get,
     HttpCode,
     HttpStatus,
-    Param,
+    ParseFilePipe,
     Patch,
     Req,
     UploadedFile,
@@ -14,8 +15,7 @@ import {
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { RequestWithParsedPayload } from "../auth/auth.type";
-import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
-import { SharpPipe } from "../common/pipes/sharp.pipe";
+import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { DeleteUserDto } from "./dto/delete-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { UserService } from "./user.service";
@@ -47,7 +47,14 @@ export class UserController {
     @HttpCode(HttpStatus.OK)
     async setUserAvatar(
         @Req() req: RequestWithParsedPayload,
-        @UploadedFile(SharpPipe) avatar: string,
+        @UploadedFile(
+            new ParseFilePipe({
+                validators: [
+                    new FileTypeValidator({ fileType: /image\/(png|jpe?g)/ }),
+                ],
+            }),
+        )
+        avatar: Express.Multer.File,
     ) {
         return this.userService.updateAvatar({
             userId: req.user.userId,
@@ -55,14 +62,11 @@ export class UserController {
         });
     }
 
-    @Get("avatar/:avatarFileName")
+    @Delete("avatar")
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
-    async getUserAvatar(
-        @Req() req: RequestWithParsedPayload,
-        @Param() { avatarFileName }: { avatarFileName: string },
-    ) {
-        return this.userService.getAvatar(req.user.userId, avatarFileName);
+    async deleteUserAvatar(@Req() req: RequestWithParsedPayload) {
+        return this.userService.deleteAvatar(req.user.userId);
     }
 
     @Delete()

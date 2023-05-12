@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document } from "mongoose";
-import { Hashing } from "../common/helpers";
+import { Hashing } from "../../common/helpers";
 
 @Schema({ timestamps: true })
 export class User extends Document {

@@ -16,7 +16,7 @@ import {
 } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { RequestWithParsedPayload } from "../auth/auth.type";
-import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
+import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { CreateNoteDto } from "./dto/create-note.dto";
 import { DeleteManyNotesDto } from "./dto/delete-many-notes.dto";
 import { UpdateNoteDto } from "./dto/update-note.dto";
