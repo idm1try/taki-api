@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+    mongodb:
+        image: mongo:6.0.5-jammy
+        restart: unless-stopped
+        env_file: ./.env
+        ports:
+            - 27017:$MONGO_PORT
+        environment:
+            - MONGO_INITDB_ROOT_USERNAME=$MONGO_USERNAME
+            - MONGO_INITDB_ROOT_PASSWORD=$MONGO_PASSWORD
+        volumes:
+            - mongodb_data_container:/data/db
+    api:
+        build: .
+        ports:
+            - 4000:4000
+        volumes:
+            - .:/app
+        depends_on:
+            - mongodb
+        environment:
+            - MONGO_HOST=mongodb
+
+volumes:
+    mongodb_data_container:
