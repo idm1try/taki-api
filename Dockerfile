@@ -1,4 +1,4 @@
-FROM node:18.16.0-bullseye AS builder
+FROM node:18.16.0-alpine3.17 AS builder
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ COPY . .
 
 RUN pnpm run build
 
-FROM node:18.16.0-bullseye
+FROM node:18.16.0-alpine3.17
 
 WORKDIR /usr/share/app
 
