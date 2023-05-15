@@ -1,0 +1,4 @@
+"*.ts":
+    - pnpm run lint:fix
+    - pnpm run format
+    - git add .

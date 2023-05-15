@@ -26,5 +26,7 @@ COPY --from=builder /app/node_modules ./node_modules
 
 ENV NODE_ENV production
 
+EXPOSE 4000
+
 CMD ["pm2-runtime", "dist/src/main.js"]
 
