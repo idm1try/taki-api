@@ -18,11 +18,13 @@ FROM node:18.16.0-alpine3.17
 
 WORKDIR /usr/share/app
 
+RUN npm i -g pm2
+
 COPY --from=builder /app/dist ./dist
 
 COPY --from=builder /app/node_modules ./node_modules
 
 ENV NODE_ENV production
 
-CMD ["node", "dist/src/main.js"]
+CMD ["pm2-runtime", "dist/src/main.js"]
 
