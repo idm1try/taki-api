@@ -1,4 +1,6 @@
-# Taki Server REST API
+# Taki REST API
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/NeiLty?referralCode=ySCnWl)
 
 ## Installation
 
@@ -31,6 +33,7 @@ pnpm run start:dev
 -   NodeMailer
 -   Google Auth
 -   Facebook Auth
+-   Imgur storage
 
 ### Third Party Auth Flow
 
