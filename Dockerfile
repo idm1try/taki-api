@@ -2,7 +2,7 @@ FROM node:18.16.0-alpine3.17 AS builder
 
 WORKDIR /app
 
-RUN npm install -g pnpm@8.5.0
+RUN npm install -g pnpm@latest
 
 COPY package.json ./
 
